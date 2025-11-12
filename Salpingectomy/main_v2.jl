@@ -35,7 +35,7 @@ relative_risk_OvC = 0.35
 
 
 ## Change this variable ##
-acceptance_rate = 0.2           
+acceptance_rate = 0.3          
 
 println("Strategy: ", strategy)
 println("Population size: ", population_size)
