@@ -121,6 +121,7 @@ time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 
 @sync @distributed for individual in 1:nrow(sim_res)   
     salpingectomy_done = false
+    worker_rng = MersenneTwister(individual)
 
     # Until age 50
     for cycle in 1:480
