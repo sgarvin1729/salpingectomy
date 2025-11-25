@@ -12,6 +12,16 @@
 #   2. Submit this code to HPC.
 #       - Calculated mortality reduction rate will be printed out.
 #       - All the simulation results will be saved as CSV file under output directory.
+
+#Input Parameters (CSV):
+#       OvC_histology - Histology of ovarian cancer (0 if no cancer, string of cancer name if present)
+#       time_at_OvCPrev - Time when occult (preclinical) ovarian cancer becomes present, before diagnosis (0 if no cancer)
+#       time_at_diagnosis - Time when ovarian cancer is diagnosed (0 if no cancer)
+#       time_at_OvarianDeath - Time this woman would die of ovarian cancer in the baseline scenario (no salpingectomy). (0 if no death from cancer)
+#       time_at_OCMdeath - Time when non-ovarian cancer death occurs (0 if she dies from cancer OR if she outlives time horizon)
+#       state_at_death - Encodes which absorbing state she dies in (H = healthy), I don't think this matters for this simulation
+
+# the stragey files need to ouput a dictionary, an age, and a non-opportunistic acceptance rate vector
 ###################################################################################################################################################
 
 using Distributed
@@ -34,11 +44,22 @@ end
 
 # Set strategy
 
-mode = "opportunistic"  # "opportunistic" or "non_opportunistic"
+#  Define opportunistic procedure and their base acceptance rates
+
+opportunistic_procedure = Dict("Abdominal hernia repair" => .1,
+                                "Appendectomy" => .1,
+                                "Cholecystectomy" => .1,
+                                "Colectomy" => .1, 
+                                "Gastric bypass" => .1,
+                                "Hysterectomy" => .1,
+                                "Bilateral tubal ligation" => .1)
+                                
 strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
 # for non-opportunistic salpingectomy, set acceptance rate
 acceptance_rate = 1.0
+# Simulation parameters
+age = 50
 
 population_size = 1000
 relative_risk_OvC = 0.35
@@ -61,6 +82,8 @@ sim_res.index = [1:nrow(sim_res)...]
 
 ## Procedure rate
 procedure_count = zeros(90*12, 8)
+
+
 
 # Events in a year
 Any_procedure = vcat(fill(0, 8*12),    fill(4626, 8*12), fill(5154, 5*12), fill(7665, 5*12), fill(7435, 5*12), fill(5763, 5*12), 
@@ -122,15 +145,19 @@ time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))    
 time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
 time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 
+#fname = strategy
+#f = getfield(Main, Symbol(fname))
+#opportunistic_rates, non_opportunistic_rates = f(worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[individual], sim_res.time_at_OvarianDeath[individual])
+
+
+opportunistic_rates = fill(1, 7, 1080)
+
 @sync @distributed for individual in 1:nrow(sim_res)   
     salpingectomy_done = false
     worker_rng = MersenneTwister(individual)
     
     for cycle in 1:1080
         if salpingectomy_done == false
-            if mode == "non_opportunistic" && cycle == 481
-                break
-            end
             #Check if this women takes abdominal surgery
             rate = sum(procedure_rate_matrix[cycle, 2:8])
             action = sample(worker_rng, [true, false], Weights([rate, 1-rate]))
@@ -148,21 +175,30 @@ time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
                 if salpingectomy_done == false
 
                     # Check if this women takes salpingectomy and the effectiveness if taking salpingectomy
-                    if strategy == "everyone"
-                        decision, t_OvC_death_Salpingectomy, t_effective_treatment = everyone(worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[individual], sim_res.time_at_OvarianDeath[individual])
-                    elseif strategy == "BTL_only"
-                        decision, t_OvC_death_Salpingectomy, t_effective_treatment = BTL_only(worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[individual], sim_res.time_at_OvarianDeath[individual])
-                    elseif strategy == "Linear_all"
-                        decision, t_OvC_death_Salpingectomy, t_effective_treatment = Linear_all(worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[individual], sim_res.time_at_OvarianDeath[individual])
-                    elseif strategy == "Linear_half"
-                        decision, t_OvC_death_Salpingectomy, t_effective_treatment = Linear_half(worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[individual], sim_res.time_at_OvarianDeath[individual])
-                    end     
                     
+                    acceptance_rate = opportunistic_rates[select_surgery-1, cycle]
+                    decision = sample(worker_rng, [true, false], Weights([acceptance_rate, 1 - acceptance_rate]))
+                    
+                    #we might not actually use this time, it's just generated blindly to improve control flow. Can be changed if you want
+                    effective_salpingectomy = sample(worker_rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+                    
+worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[individual], sim_res.time_at_OvarianDeath[individual]
+
+                    if cycle >= sim_res.time_at_diagnosis[individual]
+                        decision = false
+                    end
+                    if sim_res.time_at_diagnosis[individual] == 0 || effective_salpingectomy == 0 || decision == false || cycle >= sim_res.time_at_diagnosis[individual]
+                        time_OvC_death_Salpingectomy[individual] .= sim_res.time_at_OvarianDeath[individual]
+                        t_effective_treatment = 0
+                    elseif effective_salpingectomy > 0
+                        time_OvC_death_Salpingectomy[individual] = 0
+                        t_effective_treatment = effective_salpingectomy
+                    end
+
                     if decision == true
                         # Take salpingectomy
                         salpingectomy_done = true
                         time_salingectomy[individual] = cycle
-                        println("Individual: ", individual, ", Cycle: ", cycle, ", Surgery: ", v_procedure[select_surgery], ", OvC death time (after salpingectomy): ", t_OvC_death_Salpingectomy)
                         time_effective_salpingectomy[individual] = t_effective_treatment
                         time_OvC_death_Salpingectomy[individual] = t_OvC_death_Salpingectomy
                     end
@@ -172,32 +208,41 @@ time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
             break      
         end
     end
-
-    # After age 50
-    if salpingectomy_done == false && mode == "non_opportunistic"
-        
-        # Decide if this women will take salpingectomy (without opportunity) in the remaining of her life 
-        flag = sample(worker_rng, [true, false], Weights([acceptance_rate, 1-acceptance_rate]))
-        time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
-
-        # This women take Salpingectomy after age 50
-        if flag == true && 481 <= time_death
-            salpingectomy_done = true
-            t_salpingectomy = sample(worker_rng, [481:time_death...])
-            time_salingectomy[individual] = t_salpingectomy
-
-            # Check the effectiveness of the salpingectomy
-            if t_salpingectomy < sim_res.time_at_diagnosis[individual] || sim_res.time_at_diagnosis[individual] == 0
-                t_effective_salpingectomy = sample(worker_rng, [t_salpingectomy, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
-                
-                if t_effective_salpingectomy > 0
-                    time_OvC_death_Salpingectomy[individual] = 0
-                    time_effective_salpingectomy[individual] =  t_effective_salpingectomy
-                end
-            end
-        end
-    end
 end
+
+# Non-opportunistic salpingectomy after some age
+
+# acceptance_rate = sum(non_opportunistic_rates)
+
+# @sync @distributed for individual in 1:nrow(sim_res)   
+
+#     worker_rng = MersenneTwister(individual)
+
+#     # After age 50
+#     if time_salingectomy[individual] == false
+        
+#         # Decide if this women will take salpingectomy (without opportunity) in the remaining of her life 
+#         flag = sample(worker_rng, [true, false], Weights([acceptance_rate, 1-acceptance_rate]))
+#         time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
+
+#         # This women take Salpingectomy after age 50
+#         if flag == true && 481 <= time_death
+#             salpingectomy_done = true
+#             t_salpingectomy = sample(worker_rng, [481:time_death...])
+#             time_salingectomy[individual] = t_salpingectomy
+
+#             # Check the effectiveness of the salpingectomy
+#             if t_salpingectomy < sim_res.time_at_diagnosis[individual] || sim_res.time_at_diagnosis[individual] == 0
+#                 t_effective_salpingectomy = sample(worker_rng, [t_salpingectomy, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+                
+#                 if t_effective_salpingectomy > 0
+#                     time_OvC_death_Salpingectomy[individual] = 0
+#                     time_effective_salpingectomy[individual] =  t_effective_salpingectomy
+#                 end
+#             end
+#         end
+#     end
+# end
 
 
 
