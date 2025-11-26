@@ -26,7 +26,7 @@
 
 using Distributed
 nworkers()
-num_node = 3
+num_node = 40
 addprocs(num_node-1)
 
 @everywhere begin
@@ -54,14 +54,14 @@ opportunistic_procedure = Dict("Abdominal hernia repair" => .1,
                                 "Hysterectomy" => .1,
                                 "Bilateral tubal ligation" => .1)
                                 
-strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+strategy = "BTL_only" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
 # for non-opportunistic salpingectomy, set acceptance rate
 acceptance_rate = 1.0
 # Simulation parameters
 age = 50
 
-population_size = 1000
+population_size = 10000000
 relative_risk_OvC = 0.35
 println("Strategy: ", strategy)
 println("Population size: ", population_size)
@@ -150,7 +150,10 @@ time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 #opportunistic_rates, non_opportunistic_rates = f(worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[individual], sim_res.time_at_OvarianDeath[individual])
 
 
-opportunistic_rates = fill(1, 7, 1080)
+strategies = Dict("everyone" =>fill(1, 7, 1080), 
+                "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)))
+
+opportunistic_rates = strategies[strategy]
 
 @sync @distributed for individual in 1:nrow(sim_res)   
     salpingectomy_done = false
