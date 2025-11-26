@@ -76,7 +76,7 @@ v_procedure = ["Any procedure", "Abdominal hernia repair", "Appendectomy", "Chol
 
 # Read simulation results
 #sim_res = DataFrame(CSV.File("C:\\Users\\Ethan\\Desktop\\Salpingectomy\\inputs\\simulation_results_detailed.csv"; limit=population_size))
-sim_res = CSV.read("C:\\Users\\Ethan\\Desktop\\Salpingectomy\\inputs\\simulation_results_detailed.csv", DataFrame)
+sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
 sim_res.index = [1:nrow(sim_res)...]
 
 
