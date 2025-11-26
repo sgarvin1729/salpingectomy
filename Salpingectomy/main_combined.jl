@@ -182,13 +182,11 @@ opportunistic_rates = fill(1, 7, 1080)
                     #we might not actually use this time, it's just generated blindly to improve control flow. Can be changed if you want
                     effective_salpingectomy = sample(worker_rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
                     
-worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[individual], sim_res.time_at_OvarianDeath[individual]
-
                     if cycle >= sim_res.time_at_diagnosis[individual]
                         decision = false
                     end
                     if sim_res.time_at_diagnosis[individual] == 0 || effective_salpingectomy == 0 || decision == false || cycle >= sim_res.time_at_diagnosis[individual]
-                        time_OvC_death_Salpingectomy[individual] .= sim_res.time_at_OvarianDeath[individual]
+                        time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
                         t_effective_treatment = 0
                     elseif effective_salpingectomy > 0
                         time_OvC_death_Salpingectomy[individual] = 0
@@ -200,7 +198,6 @@ worker_rng, relative_risk_OvC, select_surgery, cycle, sim_res.time_at_diagnosis[
                         salpingectomy_done = true
                         time_salingectomy[individual] = cycle
                         time_effective_salpingectomy[individual] = t_effective_treatment
-                        time_OvC_death_Salpingectomy[individual] = t_OvC_death_Salpingectomy
                     end
                 end               
             end     
