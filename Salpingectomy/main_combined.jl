@@ -26,14 +26,68 @@
 
 using Distributed
 rmprocs(workers())
-nworkers()
-num_node = 2
-addprocs(num_node-1)
+# nworkers()
+# num_node = 3
+# addprocs(num_node-1)
 
 @everywhere begin
     using CSV, DataFrames, Random
     using StatsBase, SharedArrays
     using Base.Threads
+end
+
+# TODO: I dont know if the helper functions should be here or if we should mvoe them to a separate file
+@everywhere begin
+    cycle_at_age(a::Int) = a*12 + 1
+
+    #  Helper function to build non-opportunistic time weights for different distributions
+    function build_nonopp_time_weights(
+        dist::String,
+        total_cycles::Int;
+        start_age::Int,
+        end_age::Union{Int,Nothing}=nothing,
+        params::Dict=Dict()
+    )
+        w = zeros(Float64, total_cycles)
+        start = cycle_at_age(start_age)
+        # If end_age is nothing, go to the end of simulation
+        stop  = isnothing(end_age) ? total_cycles : min(end_age*12, total_cycles)
+
+        if dist == "Uniform"
+            w[start:stop] .= 1.0
+
+        elseif dist == "Linear"
+            len = stop - start + 1
+            w[start:stop] .= collect(1:len)
+
+        elseif dist == "Exponential"
+            lambda = params[:lambda]  # TODO: What should lambda be?
+            for c in start:total_cycles
+                del = c - start
+                w[c] = exp(-lambda * del)
+            end
+
+        else
+            error("Unknown non-opportunistic distribution: $dist")
+        end
+
+        return w
+    end
+
+    # Helper function to build non-opportunistic acceptance probability vector
+    function build_nonopp_accept_vec(
+        total_cycles::Int;
+        base_rate::Float64,
+        change_age::Union{Int,Nothing}=nothing,
+        after_rate::Union{Float64,Nothing}=nothing
+    )
+        p = fill(base_rate, total_cycles)
+        if !isnothing(change_age)
+            idx = cycle_at_age(change_age)
+            p[idx:end] .= after_rate
+        end
+        return p
+    end
 end
 
 @everywhere begin
@@ -68,7 +122,7 @@ acceptance_rate = .3
 age = 50
 
 
-population_size = 12
+population_size = 200
 relative_risk_OvC = 0.35
 println("Strategy: ", strategy)
 println("Population size: ", population_size)
@@ -162,19 +216,37 @@ strategies = Dict("everyone" =>fill(1, 7, 1080),
 
 opportunistic_rates = strategies[strategy]
 
+# Non-opportunistic salpingectomy parameters
 
-start_cycle_non_opportunistic = age*12 + 1
 total_cycles = 1080
-remaining_cycles = 1080 - start_cycle_non_opportunistic + 1
-non_opportunistic_rates = fill(0.0, total_cycles)
+start_cycle_non_opportunistic = cycle_at_age(age)
 
-if remaining_cycles > 0 && acceptance_rate > 0
-    if non_opportunistic_distribution == "Uniform"
-        non_opportunistic_rates[start_cycle_non_opportunistic:end] .= 1
-    end
-end
+# Make time distribution
+time_weights = build_nonopp_time_weights(
+    non_opportunistic_distribution,  # "Uniform", "Linear", "Exponential"
+    total_cycles;
+    start_age=age,
+    end_age=100,                     
+    params=Dict(:lambda => 1/120.0)  # only used if Exponential
+)
 
+# age-dependent acceptance
+accept_vec = build_nonopp_accept_vec(
+    total_cycles;
+    base_rate=acceptance_rate,
+    change_age=nothing,         # set to some age (50) if you want step change
+    after_rate=nothing          # set to some prob (1.0) if you want 100% after that age
+)
 
+# Overall acceptance probability
+# population-level acceptance gate that guarantees exactly p_total of women ever take non-opportunistic salpingectomy, independent of lifespan
+p_total = acceptance_rate
+
+@show sum(time_weights)
+@show minimum(time_weights) maximum(time_weights)
+@show findfirst(>(0.0), time_weights) findlast(>(0.0), time_weights)
+
+@show minimum(accept_vec) maximum(accept_vec)
 
 
 @sync @distributed for individual in 1:nrow(sim_res)   
@@ -192,7 +264,7 @@ end
                 
                 if time_surgery[individual, select_surgery-1] !== 0
                     # Don't take surgery, since the women already took the surgery before.
-                    break
+                    continue
                 end
 
                 time_surgery[individual, select_surgery-1] = cycle
@@ -201,8 +273,8 @@ end
 
                     # Check if this women takes salpingectomy and the effectiveness if taking salpingectomy
                     
-                    acceptance_rate = opportunistic_rates[select_surgery-1, cycle]
-                    decision = sample(worker_rng, [true, false], Weights([acceptance_rate, 1 - acceptance_rate]))
+                    opp_acceptence = opportunistic_rates[select_surgery-1, cycle]
+                    decision = sample(worker_rng, [true, false], Weights([opp_acceptence, 1 - opp_acceptence]))
                     
                     #we might not actually use this time, it's just generated blindly to improve control flow. Can be changed if you want
                     effective_salpingectomy = sample(worker_rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
@@ -234,37 +306,58 @@ end
 
 # Non-opportunistic salpingectomy after some age
 
-@sync @distributed for individual in 1:nrow(sim_res)   
+@sync @distributed for individual in 1:nrow(sim_res)
 
-    worker_rng = MersenneTwister(individual)
+    rng = MersenneTwister(individual)
 
-    # After age
+    # If already got salpingectomy opportunistically, skip
     if time_salingectomy[individual] != 0
         continue
-    else
-        # Decide if this women will take salpingectomy (without opportunity) in the remaining of her life 
-        flag = sample(worker_rng, [true, false], Weights([acceptance_rate, 1-acceptance_rate]))
-        time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
+    end
 
-        # This women take Salpingectomy after age
-        if flag == true && (age*12) <= time_death
-            salpingectomy_done = true
-            t_salpingectomy = sample(worker_rng, [start_cycle_non_opportunistic:time_death...], Weights(non_opportunistic_rates[1:Int(time_death)]))
-            time_salingectomy[individual] = t_salpingectomy
-            
-            # Check the effectiveness of the salpingectomy
-            if t_salpingectomy < sim_res.time_at_diagnosis[individual] || sim_res.time_at_diagnosis[individual] == 0
-                t_effective_salpingectomy = sample(worker_rng, [t_salpingectomy, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
-                
-                if t_effective_salpingectomy > 0
-                    time_OvC_death_Salpingectomy[individual] = 0
-                    time_effective_salpingectomy[individual] =  t_effective_salpingectomy
-                end
-            end
+    # Checking if we ever accept
+    if rand(rng) >= p_total
+        continue
+    end
+
+    # death time handling
+    raw_time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
+    time_death = (raw_time_death == 0) ? total_cycles : min(raw_time_death, total_cycles)
+    time_death_int = Int(floor(time_death))
+
+    # must be alive past eligibility start
+    if start_cycle_non_opportunistic > time_death_int
+        continue
+    end
+
+    # Sample a candidate time t using the weights on the valid index set
+    idxs = start_cycle_non_opportunistic:time_death_int
+    w = time_weights[idxs]
+
+    # if weights are all zero, skip
+    if all(==(0.0), w)
+        continue
+    end
+
+    t_salpingectomy = sample(rng, collect(idxs), Weights(w))
+
+    # 3) Age-dependent acceptance filter (piecewise acceptance if specified)
+    if rand(rng) >= accept_vec[t_salpingectomy]
+        continue
+    end
+
+    time_salingectomy[individual] = t_salpingectomy
+
+    # effectiveness check
+    diag = sim_res.time_at_diagnosis[individual]
+    if diag == 0 || t_salpingectomy < Int(floor(diag))
+        t_eff = sample(rng, [t_salpingectomy, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+        if t_eff > 0
+            time_OvC_death_Salpingectomy[individual] = 0
+            time_effective_salpingectomy[individual] = t_eff
         end
     end
 end
-
 
 
 # Summarize Results
