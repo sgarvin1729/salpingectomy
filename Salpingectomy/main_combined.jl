@@ -25,8 +25,9 @@
 ###################################################################################################################################################
 
 using Distributed
+rmprocs(workers())
 nworkers()
-num_node = 40
+num_node = 2
 addprocs(num_node-1)
 
 @everywhere begin
@@ -56,12 +57,18 @@ opportunistic_procedure = Dict("Abdominal hernia repair" => .1,
                                 
 strategy = "BTL_only" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
+
+
+# Define non-opportunistic salpingectomy parameters
+
+non_opportunistic_distribution = "Uniform" # Select one from ["Uniform"]
 # for non-opportunistic salpingectomy, set acceptance rate
-acceptance_rate = 1.0
+acceptance_rate = .3
 # Simulation parameters
 age = 50
 
-population_size = 10000000
+
+population_size = 12
 relative_risk_OvC = 0.35
 println("Strategy: ", strategy)
 println("Population size: ", population_size)
@@ -76,7 +83,7 @@ v_procedure = ["Any procedure", "Abdominal hernia repair", "Appendectomy", "Chol
 
 # Read simulation results
 #sim_res = DataFrame(CSV.File("C:\\Users\\Ethan\\Desktop\\Salpingectomy\\inputs\\simulation_results_detailed.csv"; limit=population_size))
-sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
+sim_res = CSV.read("C:\\Users\\Ethan\\Desktop\\Salpingectomy_Git\\salpingectomy\\Salpingectomy\\inputs\\simulation_results_detailed.csv", DataFrame)
 sim_res.index = [1:nrow(sim_res)...]
 
 
@@ -155,6 +162,21 @@ strategies = Dict("everyone" =>fill(1, 7, 1080),
 
 opportunistic_rates = strategies[strategy]
 
+
+start_cycle_non_opportunistic = age*12 + 1
+total_cycles = 1080
+remaining_cycles = 1080 - start_cycle_non_opportunistic + 1
+non_opportunistic_rates = fill(0.0, total_cycles)
+
+if remaining_cycles > 0 && acceptance_rate > 0
+    if non_opportunistic_distribution == "Uniform"
+        non_opportunistic_rates[start_cycle_non_opportunistic:end] .= 1
+    end
+end
+
+
+
+
 @sync @distributed for individual in 1:nrow(sim_res)   
     salpingectomy_done = false
     worker_rng = MersenneTwister(individual)
@@ -212,37 +234,36 @@ end
 
 # Non-opportunistic salpingectomy after some age
 
-# acceptance_rate = sum(non_opportunistic_rates)
+@sync @distributed for individual in 1:nrow(sim_res)   
 
-# @sync @distributed for individual in 1:nrow(sim_res)   
+    worker_rng = MersenneTwister(individual)
 
-#     worker_rng = MersenneTwister(individual)
+    # After age
+    if time_salingectomy[individual] != 0
+        continue
+    else
+        # Decide if this women will take salpingectomy (without opportunity) in the remaining of her life 
+        flag = sample(worker_rng, [true, false], Weights([acceptance_rate, 1-acceptance_rate]))
+        time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
 
-#     # After age 50
-#     if time_salingectomy[individual] == false
-        
-#         # Decide if this women will take salpingectomy (without opportunity) in the remaining of her life 
-#         flag = sample(worker_rng, [true, false], Weights([acceptance_rate, 1-acceptance_rate]))
-#         time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
-
-#         # This women take Salpingectomy after age 50
-#         if flag == true && 481 <= time_death
-#             salpingectomy_done = true
-#             t_salpingectomy = sample(worker_rng, [481:time_death...])
-#             time_salingectomy[individual] = t_salpingectomy
-
-#             # Check the effectiveness of the salpingectomy
-#             if t_salpingectomy < sim_res.time_at_diagnosis[individual] || sim_res.time_at_diagnosis[individual] == 0
-#                 t_effective_salpingectomy = sample(worker_rng, [t_salpingectomy, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+        # This women take Salpingectomy after age
+        if flag == true && (age*12) <= time_death
+            salpingectomy_done = true
+            t_salpingectomy = sample(worker_rng, [start_cycle_non_opportunistic:time_death...], Weights(non_opportunistic_rates[1:Int(time_death)]))
+            time_salingectomy[individual] = t_salpingectomy
+            
+            # Check the effectiveness of the salpingectomy
+            if t_salpingectomy < sim_res.time_at_diagnosis[individual] || sim_res.time_at_diagnosis[individual] == 0
+                t_effective_salpingectomy = sample(worker_rng, [t_salpingectomy, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
                 
-#                 if t_effective_salpingectomy > 0
-#                     time_OvC_death_Salpingectomy[individual] = 0
-#                     time_effective_salpingectomy[individual] =  t_effective_salpingectomy
-#                 end
-#             end
-#         end
-#     end
-# end
+                if t_effective_salpingectomy > 0
+                    time_OvC_death_Salpingectomy[individual] = 0
+                    time_effective_salpingectomy[individual] =  t_effective_salpingectomy
+                end
+            end
+        end
+    end
+end
 
 
 

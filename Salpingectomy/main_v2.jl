@@ -12,7 +12,7 @@
 ###################################################################################################################################################
 
 using Distributed
-num_node = 40
+num_node = 3
 addprocs(num_node-1) 
 
 @everywhere begin
@@ -30,7 +30,7 @@ end
 
 # Set strategy
 strategy = "BTL_only"
-population_size = "10M"
+population_size = 1000
 relative_risk_OvC = 0.35
 
 
