@@ -133,7 +133,7 @@ time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear
 
 for i in 1:6
 
-    strategy = "BTL_only" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+    strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
     time_weights = time_weights_list[i]
 
