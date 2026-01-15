@@ -57,7 +57,7 @@ end
         println("here")
         
         for month in 1:(start_cycle-1)
-            w[month] = 0
+            w[month] = start_prob
         end
         println("here")
         for month in start_cycle:end_cycle
@@ -79,10 +79,10 @@ end
         start_cycle = 12*(start_age - 10) + 1
         
         for month in 1:(start_cycle-1)
-            w[month] = 0
+            w[month] = 1
         end
         for month in start_cycle:1080
-            w[month] = exp((month-(start_cycle-1))*lambda)
+            w[month] = exp((month-(start_cycle-1))*lambda/12)
         end
         return w
     end
@@ -128,18 +128,22 @@ opportunistic_procedure = Dict("Abdominal hernia repair" => .1,
                                 "Bilateral tubal ligation" => .1)
  
                                 
-time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear(0.0, 1.0, 18, 50), build_nonopp_weights_linear(0.0, 0.5, 18, 50), build_nonopp_weights_exp(18, 0.05), build_nonopp_weights_exp(50, 0.05), build_nonopp_weights_jump(18, 0.1, 1.0), build_nonopp_weights_jump(18, 0.5, 1.0), build_nonopp_weights_jump(50, 0.1, 1.0), build_nonopp_weights_jump(50, 0.5, 1.0)]
+time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear(0.0, 1.0, 10, 50), build_nonopp_weights_linear(0.5, 1.0, 10, 50), build_nonopp_weights_exp(10, log(2)/40), build_nonopp_weights_jump(50, 0.0, 1.0), build_nonopp_weights_jump(50, 0.25, 0.5)]
 
 
-for i in 1:9
+for i in 1:6
 
-    strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+    strategy = "BTL_only" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
     time_weights = time_weights_list[i]
 
     # Define non-opportunistic salpingectomy parameters
     # for non-opportunistic salpingectomy, set acceptance rate
-    acceptance_rate = 0.1
+    acceptance_rate = 0.1 #do 0.1, 0.2, 0.3, 0.4, 0.5
+    #uniform 
+    # linear: (0% at age 10, 100% at age 50) 
+    # exponential: 
+    # jump:
     # Simulation parameters
     age = 50
 
@@ -383,5 +387,5 @@ for i in 1:9
     mortality_reduction = 1 - nrow(after)/nrow(before)
 
     println("Reduction: ", round(mortality_reduction, digits=4))
-    
+
 end
