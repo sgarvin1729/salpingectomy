@@ -290,26 +290,56 @@ for i in 1:6
                         opp_acceptence = opportunistic_rates[select_surgery-1, cycle]
                         decision = sample(worker_rng, [true, false], Weights([opp_acceptence, 1 - opp_acceptence]))
                         
-                        #we might not actually use this time, it's just generated blindly to improve control flow. Can be changed if you want
-                        effective_salpingectomy = sample(worker_rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
-                        
-                        if cycle >= sim_res.time_at_diagnosis[individual]
-                            decision = false
-                        end
-                        if sim_res.time_at_diagnosis[individual] == 0 || effective_salpingectomy == 0 || decision == false || cycle >= sim_res.time_at_diagnosis[individual]
-                            time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
-                            t_effective_treatment = 0
-                        elseif effective_salpingectomy > 0
-                            time_OvC_death_Salpingectomy[individual] = 0
-                            t_effective_treatment = effective_salpingectomy
-                        end
+                        # Changes to handle stage at diagnosis
+
+                        # Check eligibility
+                        t_prev = sim_res.time_at_OvCPrev[individual]
+                        # Eligable only if no cancer ever or salpingectomy happens before cancer onset
+                        eligible = (t_prev == 0.0 || cycle < Int(floor(t_prev)))
 
                         if decision == true
-                            # Take salpingectomy
-                            salpingectomy_done = true
-                            time_salingectomy[individual] = cycle
-                            time_effective_salpingectomy[individual] = t_effective_treatment
+                            if eligible
+                                # same code as before
+                                effective_salpingectomy = sample(worker_rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+                                if effective_salpingectomy > 0
+                                    time_OvC_death_Salpingectomy[individual] = 0
+                                    t_effective_treatment = effective_salpingectomy
+                                else
+                                    time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
+                                    t_effective_treatment = 0
+                                end
+                            else
+                                # Not eligible, so no effect
+                                time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
+                                t_effective_treatment = 0
+                            end
+                        else
+                            # Did not take salpingectomy
+                            time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
+                            t_effective_treatment = 0
                         end
+
+
+                        # #we might not actually use this time, it's just generated blindly to improve control flow. Can be changed if you want
+                        # effective_salpingectomy = sample(worker_rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+                        
+                        # if cycle >= sim_res.time_at_diagnosis[individual]
+                        #     decision = false
+                        # end
+                        # if sim_res.time_at_diagnosis[individual] == 0 || effective_salpingectomy == 0 || decision == false || cycle >= sim_res.time_at_diagnosis[individual]
+                        #     time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
+                        #     t_effective_treatment = 0
+                        # elseif effective_salpingectomy > 0
+                        #     time_OvC_death_Salpingectomy[individual] = 0
+                        #     t_effective_treatment = effective_salpingectomy
+                        # end
+
+                        # if decision == true
+                        #     # Take salpingectomy
+                        #     salpingectomy_done = true
+                        #     time_salingectomy[individual] = cycle
+                        #     time_effective_salpingectomy[individual] = t_effective_treatment
+                        # end
                     end               
                 end     
             else
@@ -354,15 +384,29 @@ for i in 1:6
 
         time_salingectomy[individual] = t_salpingectomy
 
-        # effectiveness check
-        diag = sim_res.time_at_diagnosis[individual]
-        if diag == 0 || t_salpingectomy < Int(floor(diag))
-            t_eff = sample(rng, [t_salpingectomy, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+        # Changes to handle stage at diagnosis
+
+        t_prev = sim_res.time_at_OvCPrev[individual]
+        eligible = (t_prev == 0.0) || (t_salpingectomy < Int(floor(t_prev)))
+
+        if eligible
+            t_eff = sample(rng, [t_salpingectomy, 0], Weights([1 - relative_risk_OvC, relative_risk_OvC]))
             if t_eff > 0
                 time_OvC_death_Salpingectomy[individual] = 0
                 time_effective_salpingectomy[individual] = t_eff
             end
         end
+
+
+        # # effectiveness check
+        # diag = sim_res.time_at_diagnosis[individual]
+        # if diag == 0 || t_salpingectomy < Int(floor(diag))
+        #     t_eff = sample(rng, [t_salpingectomy, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+        #     if t_eff > 0
+        #         time_OvC_death_Salpingectomy[individual] = 0
+        #         time_effective_salpingectomy[individual] = t_eff
+        #     end
+        # end
     end
 
 
