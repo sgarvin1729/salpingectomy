@@ -295,7 +295,7 @@ for i in 1:6
                         # Check eligibility
                         t_prev = sim_res.time_at_OvCPrev[individual]
                         # Eligable only if no cancer ever or salpingectomy happens before cancer onset
-                        eligible = (t_prev == 0.0 || cycle < Int(floor(t_prev)))
+                        eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev)))
 
                         if decision == true
                             if eligible
@@ -387,7 +387,7 @@ for i in 1:6
         # Changes to handle stage at diagnosis
 
         t_prev = sim_res.time_at_OvCPrev[individual]
-        eligible = (t_prev == 0.0) || (t_salpingectomy < Int(floor(t_prev)))
+        eligible = (t_prev == 0.0) || (t_salpingectomy <= Int(floor(t_prev)))
 
         if eligible
             t_eff = sample(rng, [t_salpingectomy, 0], Weights([1 - relative_risk_OvC, relative_risk_OvC]))
