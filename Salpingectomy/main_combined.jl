@@ -57,16 +57,15 @@ end
         start_cycle = age_to_start_cycle(start_age)
         end_cycle = age_to_end_cycle(end_age)
         slope = (end_prob-start_prob)/Float64((end_cycle-(start_cycle-1)))
-        println("here")
         
         for month in 1:(start_cycle-1)
             w[month] = start_prob
         end
-        println("here")
+
         for month in start_cycle:end_cycle
             w[month] = Float64((month-(start_cycle-1)))*slope + start_prob
         end
-        println("here")
+
         for month in (end_cycle+1):1080
             w[month] = end_prob
         end
@@ -215,7 +214,7 @@ for i in 1:6
         max_cycle = (t_diag == 0) ? 1080 : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
         cycle = 1
 
-        while cycle <= maxcycle && !salpingectomy_done
+        while cycle <= max_cycle && !salpingectomy_done
             #Check if this women takes abdominal surgery
             @views rates = procedure_rate_matrix[cycle, 2:8]
             select_surgery = sample(worker_rng, 1:8, Weights(vcat(1 - sum(rates), rates))) # 1 = no surgery
