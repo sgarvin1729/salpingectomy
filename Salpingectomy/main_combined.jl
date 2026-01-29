@@ -217,7 +217,7 @@ for i in 1:6
         while cycle <= max_cycle && !salpingectomy_done
             #Check if this women takes abdominal surgery
             @views rates = procedure_rate_matrix[cycle, 2:8]
-            select_surgery = sample(worker_rng, 1:8, Weights(vcat(1 - sum(rates), rates))) # 1 = no surgery
+            select_surgery = sample(rng, 1:8, Weights(vcat(1 - sum(rates), rates))) # 1 = no surgery
                             
             if select_surgery >= 2  # Take surgery
                 
@@ -231,7 +231,7 @@ for i in 1:6
                 # Check if this women takes salpingectomy and the effectiveness if taking salpingectomy
                 
                 opp_acceptence = opportunistic_rates[select_surgery-1, cycle]
-                decision = sample(worker_rng, [true, false], Weights([opp_acceptence, 1 - opp_acceptence]))
+                decision = sample(rng, [true, false], Weights([opp_acceptence, 1 - opp_acceptence]))
             
                 # Eligable only if no cancer ever or salpingectomy happens before cancer onset
                 eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev)))
@@ -241,7 +241,7 @@ for i in 1:6
                     time_salpingectomy[individual] = cycle
                     if eligible
                         # same code as before
-                        effective_salpingectomy = sample(worker_rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+                        effective_salpingectomy = sample(rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
                         if effective_salpingectomy > 0
                             time_OvC_death_Salpingectomy[individual] = 0
                             time_effective_salpingectomy[individual] = effective_salpingectomy
