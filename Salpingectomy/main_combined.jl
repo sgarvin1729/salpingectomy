@@ -117,7 +117,7 @@ for i in 1:6
 
     # Define non-opportunistic salpingectomy parameters
     # for non-opportunistic salpingectomy, set acceptance rate
-    acceptance_rate = 0.2 #do 0.1, 0.2, 0.3, 0.4, 0.5
+    acceptance_rate = 0.1 #do 0.1, 0.2, 0.3, 0.4, 0.5
     #uniform 
     # linear: (0% at age 10, 100% at age 50) 
     # exponential: 
