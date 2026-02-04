@@ -104,7 +104,20 @@ end
         return w
     end
 
+<<<<<<< Updated upstream
    # Helper function to build non-opportunistic acceptance probability vector
+=======
+    function build_nonopp_weights_fixedage(
+        switch_age::Int64,
+    )
+        w = fill(0.0, 1080)
+        switch_cycle = age_to_start_cycle(switch_age)
+        
+        w[switch_cycle] = 1
+
+        return w
+    end
+>>>>>>> Stashed changes
 end
 
 
@@ -130,30 +143,46 @@ opportunistic_procedure = Dict("Abdominal hernia repair" => .1,
                                 
 time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear(0.0, 1.0, 10, 50), build_nonopp_weights_linear(0.5, 1.0, 10, 50), build_nonopp_weights_exp(10, log(2)/40), build_nonopp_weights_jump(50, 0.0, 1.0), build_nonopp_weights_jump(50, 0.25, 0.5)]
 
+<<<<<<< Updated upstream
 
 for i in 1:6
+=======
+>>>>>>> Stashed changes
 
-    strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+# Define non-opportunistic salpingectomy parameters
+# for non-opportunistic salpingectomy, set acceptance rate
 
-    time_weights = time_weights_list[i]
+acceptance_rate = 0.1 #do 0.1, 0.2, 0.3, 0.4, 0.5
+#uniform 
+# linear: (0% at age 10, 100% at age 50) 
+# exponential: 
+# jump:
+# Simulation parameters
+age = 50
 
-    # Define non-opportunistic salpingectomy parameters
-    # for non-opportunistic salpingectomy, set acceptance rate
-    acceptance_rate = 0.1 #do 0.1, 0.2, 0.3, 0.4, 0.5
-    #uniform 
-    # linear: (0% at age 10, 100% at age 50) 
-    # exponential: 
-    # jump:
-    # Simulation parameters
-    age = 50
+population_size = 10000000
+relative_risk_OvC = 0.35
 
+# Read simulation results
+sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
+sim_res.index = [1:nrow(sim_res)...]
 
-    population_size = 10000000
-    relative_risk_OvC = 0.35
+summary = DataFrame(
+    age = Int[],
+    mortality_reduction = Float64[],
+)
+
+for i in 10:99
+
+    strategy = "none" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half","none"]
+
+    time_weights = build_nonopp_weights_fixedage(i)
+
     println("Strategy: ", strategy)
     println("Population size: ", population_size)
     println("Relative risk of OvC: ", relative_risk_OvC)
 
+<<<<<<< Updated upstream
     # Set random seed
     @everywhere const worker_rng = MersenneTwister(1234 + myid())
 
@@ -166,6 +195,8 @@ for i in 1:6
     sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
     sim_res.index = [1:nrow(sim_res)...]
 
+=======
+>>>>>>> Stashed changes
 
     ## Procedure rate
     procedure_count = zeros(90*12, 8)
@@ -239,7 +270,8 @@ for i in 1:6
 
     strategies = Dict("everyone" =>fill(1, 7, 1080), 
                     "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
-                    "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600)))
+                    "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600))),
+                    "none" => fill(0, 7, 1080)
                     )
 
     opportunistic_rates = strategies[strategy]
@@ -273,12 +305,49 @@ for i in 1:6
                 rate = sum(procedure_rate_matrix[cycle, 2:8])
                 action = sample(worker_rng, [true, false], Weights([rate, 1-rate]))
                             
+<<<<<<< Updated upstream
                 if action == true   # Take surgery
                     select_surgery = sample(worker_rng, [2:8...], Weights(procedure_rate_matrix[cycle, 2:8]))
                     
                     if time_surgery[individual, select_surgery-1] !== 0
                         # Don't take surgery, since the women already took the surgery before.
                         continue
+=======
+            if select_surgery >= 2  # Take surgery
+                
+                if time_surgery[individual, select_surgery-1] !== 0
+                    # Don't take surgery, since the women already took the surgery before.
+                    cycle += 1
+                    continue
+                end
+
+                time_surgery[individual, select_surgery-1] = cycle
+
+                # Check if this women takes salpingectomy and the effectiveness if taking salpingectomy
+                
+                opp_acceptence = opportunistic_rates[select_surgery-1, cycle]
+                decision = sample(rng, [true, false], Weights([opp_acceptence, 1 - opp_acceptence]))
+            
+                # Eligable only if no cancer ever or salpingectomy happens before cancer onset
+                eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev)))
+
+                if decision == true
+                    salpingectomy_done = true
+                    time_salpingectomy[individual] = cycle
+                    if eligible
+                        # same code as before
+                        effective_salpingectomy = sample(rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+                        if effective_salpingectomy > 0
+                            time_OvC_death_Salpingectomy[individual] = 0
+                            time_effective_salpingectomy[individual] = effective_salpingectomy
+                        else
+                            time_effective_salpingectomy[individual] = 0
+                        end
+                    else
+                        # Not eligible, so no effect
+                        time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
+                        time_effective_salpingectomy[individual] = 0
+>>>>>>> Stashed changes
                     end
 
                     time_surgery[individual, select_surgery-1] = cycle
@@ -386,6 +455,12 @@ for i in 1:6
 
     mortality_reduction = 1 - nrow(after)/nrow(before)
 
-    println("Reduction: ", round(mortality_reduction, digits=4))
+    push!(summary, (
+        i,
+        mortality_reduction
+    ))
 
+    println("Reduction: ", round(mortality_reduction, digits=4))
 end
+
+CSV.write("./outputs/mortality_reduction_by_age_$(acceptance_rate)_$(population_size)_$(strategy).csv", summary)
