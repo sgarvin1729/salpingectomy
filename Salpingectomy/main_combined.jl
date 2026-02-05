@@ -122,11 +122,6 @@ end
     println("Population size: ", population_size)
     println("Relative risk of OvC: ", relative_risk_OvC)
 
-    # Read simulation results
-    sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
-    #health_states = CSV.read("./inputs/matrix.csv", DataFrame)
-    sim_res.index = [1:nrow(sim_res)...]
-
     ## Procedure rate
     procedure_count = zeros(90*12, 8)
 
@@ -182,13 +177,6 @@ end
     procedure_rate_matrix = 1 .-exp.(-(procedure_rate_matrix) .*(1/12))     # Converting annual prob. to monthly prob.
     #(i,j)th entry is probability woman undergoes procedure j during cycle i
 
-    # Start simulation
-    time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
-    time_salpingectomy            = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of salpingectomy
-    time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
-    time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
-    time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
-
     strategies = Dict("everyone" =>fill(1, 7, 1080), 
                     "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
                     "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600)))
@@ -211,6 +199,19 @@ for acceptance_rate in acceptance_rates
     # exponential: 
     # jump:
     # Simulation parameters
+
+    # Read simulation results
+    sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
+    #health_states = CSV.read("./inputs/matrix.csv", DataFrame)
+    sim_res.index = [1:nrow(sim_res)...]
+
+     # Start simulation
+    time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
+    time_salpingectomy            = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of salpingectomy
+    time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
+    time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
+    time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
+
     
     @sync @distributed for individual in 1:nrow(sim_res)   
         rng = MersenneTwister(1234 + individual)
