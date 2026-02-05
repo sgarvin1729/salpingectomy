@@ -221,7 +221,10 @@ for acceptance_rate in acceptance_rates
         t_diag = sim_res.time_at_diagnosis[individual]
         t_prev = sim_res.time_at_1[individual]
         hist = sim_res.OvC_histology[individual]
-        max_cycle = (t_diag == 0) ? 1080 : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
+        raw_time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
+        time_death = (raw_time_death == 0) ? 1080 : min(raw_time_death, 1080)
+        time_death_int = Int(floor(time_death))
+        max_cycle = (t_diag == 0) ? time_death_int : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
         cycle = 1
 
         while cycle <= max_cycle && !salpingectomy_done
