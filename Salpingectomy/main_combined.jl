@@ -125,7 +125,7 @@ println("Relative risk of OvC: ", relative_risk_OvC)
 
 # Read simulation results
 sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
-health_states = CSV.read("./inputs/matrix.csv", DataFrame)
+#health_states = CSV.read("./inputs/matrix.csv", DataFrame)
 sim_res.index = [1:nrow(sim_res)...]
 
 ## Procedure rate
@@ -215,7 +215,7 @@ for acceptance_rate in acceptance_rates
         rng = MersenneTwister(1234 + individual)
         salpingectomy_done = false
         t_diag = sim_res.time_at_diagnosis[individual]
-        #t_prev = sim_res.time_at_OvCPrev[individual]
+        t_prev = sim_res.time_at_1[individual]
         max_cycle = (t_diag == 0) ? 1080 : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
         cycle = 1
 
@@ -240,11 +240,11 @@ for acceptance_rate in acceptance_rates
                 decision = sample(rng, [true, false], Weights([opp_acceptence, 1 - opp_acceptence]))
             
                 # Eligable only if no cancer ever or salpingectomy happens before cancer onset
-                #eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev)))
+                eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev)))
 
-                health_state = health_states[individual, cycle]
+                #health_state = health_states[individual, cycle]
                 
-                eligible = (health_state = "H" || health_state = 0)
+                #eligible = (health_state = "H" || health_state = 0)
 
                 if decision == true
                     salpingectomy_done = true
