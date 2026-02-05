@@ -392,7 +392,7 @@ for age in 10:99
 
     end
 
-    df = DataFrame(reduction = reduction_vec, reduction_HGSC = reduction_HGSC_vec)
+    df = DataFrame(reduction = reduction_vec, reduction_HGSC = reduction_vec_HGSC)
 
     CSV.write("reduction.csv", df) 
 
