@@ -310,7 +310,7 @@ for acceptance_rate in acceptance_rates
 
         time_salpingectomy[individual] = t_salpingectomy
 
-        t_prev = sim_res.time_at_OvCPrev[individual]
+        t_prev = sim_res.time_at_1[individual]
         eligible = (t_prev == 0.0) || (t_salpingectomy <= Int(floor(t_prev)))
 
         if eligible
