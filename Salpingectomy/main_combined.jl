@@ -202,12 +202,14 @@ opportunistic_rates = strategies[strategy]
 
 acceptance_rates = [1]
 
-for age in 10:100
-    time_weights = build_nonopp_weights_single_age(age)
+reduction_vec = []
 
+reduction_vec_HGSC = []
 
-
+for age in 10:99
+    
     for acceptance_rate in acceptance_rates
+        time_weights = build_nonopp_weights_single_age(age)
 
         # Define non-opportunistic salpingectomy parameters
         # for non-opportunistic salpingectomy, set acceptance rate
@@ -384,6 +386,14 @@ for age in 10:100
 
         println("Reduction (HGSC): ", round(mortality_reduction_HGSC, digits=4))
 
+        push!(reduction_vec, round(mortality_reduction, digits=4))
+
+        push!(reduction_vec_HGSC, round(mortality_reduction_HGSC, digits=4))
+
     end
+
+    df = DataFrame(reduction = reduction_vec, reduction_HGSC = reduction_HGSC_vec)
+
+    CSV.write("reduction.csv", df) 
 
 end 
