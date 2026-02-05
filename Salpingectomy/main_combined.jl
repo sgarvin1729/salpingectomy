@@ -341,7 +341,7 @@ for age in 10:99
             time_salpingectomy[individual] = t_salpingectomy
 
             t_prev = sim_res.time_at_1[individual]
-            eligible = (t_prev == 0.0 || t_salpingectomy <= Int(floor(t_prev))) #&& coalesce(hist == "HGSC", false)
+            eligible = (t_prev == 0.0 || t_salpingectomy <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)
 
             if eligible
                 t_eff = sample(rng, [t_salpingectomy, 0], Weights([1 - relative_risk_OvC, relative_risk_OvC]))
