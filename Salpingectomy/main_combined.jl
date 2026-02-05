@@ -106,88 +106,90 @@ end
         return w
     end
                                 
-    #time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear(0.0, 1.0, 10, 50), build_nonopp_weights_linear(0.5, 1.0, 10, 50), build_nonopp_weights_exp(10, log(2)/40), build_nonopp_weights_jump(50, 0.0, 1.0), build_nonopp_weights_jump(50, 0.25, 0.5)]
-
-    time_weights = build_nonopp_weights_uniform() 
-
-    strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
-
-    #time_weights = time_weights_list[i]
-
-    age = 50
-
-    population_size = 10000000
-    relative_risk_OvC = 0.35
-    println("Strategy: ", strategy)
-    println("Population size: ", population_size)
-    println("Relative risk of OvC: ", relative_risk_OvC)
-
-    ## Procedure rate
-    procedure_count = zeros(90*12, 8)
-
-    # Events in a year
-    Any_procedure = vcat(fill(0, 8*12),    fill(4626, 8*12), fill(5154, 5*12), fill(7665, 5*12), fill(7435, 5*12), fill(5763, 5*12), 
-                        fill(5246, 5*12), fill(4442, 5*12), fill(4157, 5*12), fill(3240, 5*12), fill(7771, 5*12), fill(6307, 5*12), 
-                        fill(4391, 5*12), fill(2688, 5*12), fill(1911, 14*12))
-    procedure_count[:,1] = Any_procedure
-
-
-    Abdominal_hernia_repair = vcat(fill(0, 8*12),  fill(0, 8*12),   fill(18, 5*12), fill(54, 5*12), fill(101, 5*12), fill(168, 5*12),  
-                                fill(216, 5*12),fill(235, 5*12), fill(273, 5*12), fill(224, 5*12), fill(577, 5*12), fill(467, 5*12),
-                                fill(313, 5*12),fill(148, 5*12), fill(84, 14*12))
-    procedure_count[:,2] = Abdominal_hernia_repair
-
-    Appendectomy = vcat(fill(0, 8*12),   fill(829, 8*12), fill(438, 5*12), fill(535, 5*12), fill(571, 5*12), fill(521, 5*12), 
-                        fill(533, 5*12), fill(535, 5*12), fill(548, 5*12), fill(347, 5*12), fill(746, 5*12), fill(518, 5*12), 
-                        fill(295, 5*12), fill(164, 5*12), fill(89, 14*12))
-    procedure_count[:,3] = Appendectomy
-
-    Cholecystectomy = vcat(fill(0, 8*12),   fill(1295, 8*12), fill(1271, 5*12), fill(1723, 5*12), fill(1747, 5*12), fill(1859, 5*12), 
-                        fill(2029, 5*12),fill(2059, 5*12), fill(2146, 5*12), fill(1616, 5*12), fill(3950, 5*12), fill(3096, 5*12), 
-                        fill(2030, 5*12),fill(1197, 5*12), fill(825, 14*12))
-    procedure_count[:,4] = Cholecystectomy
-
-    Colectomy = vcat(fill(0, 8*12),   fill(87, 8*12),   fill(66, 5*12),  fill(74, 5*12),  fill(101, 5*12),  fill(147, 5*12), 
-                    fill(217, 5*12), fill(333, 5*12),  fill(440, 5*12), fill(493, 5*12), fill(1313, 5*12), fill(1400, 5*12), 
-                    fill(1305, 5*12),fill(1011, 5*12), fill(840, 14*12))
-    procedure_count[:,5] = Colectomy
-
-    Gastric_bypass = vcat(fill(0, 8*12),   fill(19, 8*12),  fill(35, 5*12),  fill(100, 5*12), fill(119, 5*12), fill(127, 5*12), 
-                        fill(164, 5*12), fill(185, 5*12), fill(161, 5*12), fill(116, 5*12), fill(176, 5*12), fill(39, 5*12), 
-                        fill(0, 5*12),   fill(0, 5*12),   fill(0, 14*12))
-    procedure_count[:,6] = Gastric_bypass
-
-    Hysterectomy = vcat(fill(0, 8*12),   fill(0, 8*12),   fill(11, 5*12),  fill(64, 5*12), fill(227, 5*12), fill(619, 5*12), 
-                        fill(809, 5*12), fill(428, 5*12), fill(142, 5*12), fill(93, 5*12), fill(206, 5*12), fill(187, 5*12), 
-                        fill(83, 5*12),  fill(40, 5*12),  fill(14, 14*12))
-    procedure_count[:,7] = Hysterectomy
-
-    BTL = vcat(fill(0, 8*12),   fill(1132, 8*12), fill(1919, 5*12), fill(3158, 5*12), fill(2398, 5*12), fill(726, 5*12), 
-            fill(144, 5*12), fill(18, 5*12),   fill(0, 5*12),    fill(0, 5*12),    fill(0, 5*12),    fill(0, 5*12), 
-            fill(0, 5*12),   fill(0, 5*12),    fill(0, 14*12))
-    procedure_count[:,8] = BTL
-
-    # convert the number of cases to probability of taking treatment
-    population = vcat(fill(1, 8*12),     fill(479472,8*12), fill(303952,5*12), fill(359533,5*12), fill(373973,5*12), 
-                    fill(359174, 5*12),fill(385985,5*12), fill(398822,5*12), fill(439411,5*12), fill(330916,5*12),
-                    fill(874465,5*12), fill(753484, 5*12), fill(530157,5*12),fill(347809,5*12), fill(377749,14*12))
-
-    # Calculate monthly rate that woman takes surgery
-    procedure_rate_matrix = procedure_count ./ population
-    procedure_rate_matrix = 1 .-exp.(-(procedure_rate_matrix) .*(1/12))     # Converting annual prob. to monthly prob.
-    #(i,j)th entry is probability woman undergoes procedure j during cycle i
-
-    strategies = Dict("everyone" =>fill(1, 7, 1080), 
-                    "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
-                    "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600)))
-                    )
-
-    opportunistic_rates = strategies[strategy]
-
-
-    acceptance_rates = [0.1, 0.2, 0.3, 0.4, 0.5]
-
+   
 end
+
+#time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear(0.0, 1.0, 10, 50), build_nonopp_weights_linear(0.5, 1.0, 10, 50), build_nonopp_weights_exp(10, log(2)/40), build_nonopp_weights_jump(50, 0.0, 1.0), build_nonopp_weights_jump(50, 0.25, 0.5)]
+
+time_weights = build_nonopp_weights_uniform() 
+
+strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+
+#time_weights = time_weights_list[i]
+
+age = 50
+
+population_size = 10000000
+relative_risk_OvC = 0.35
+println("Strategy: ", strategy)
+println("Population size: ", population_size)
+println("Relative risk of OvC: ", relative_risk_OvC)
+
+## Procedure rate
+procedure_count = zeros(90*12, 8)
+
+# Events in a year
+Any_procedure = vcat(fill(0, 8*12),    fill(4626, 8*12), fill(5154, 5*12), fill(7665, 5*12), fill(7435, 5*12), fill(5763, 5*12), 
+                    fill(5246, 5*12), fill(4442, 5*12), fill(4157, 5*12), fill(3240, 5*12), fill(7771, 5*12), fill(6307, 5*12), 
+                    fill(4391, 5*12), fill(2688, 5*12), fill(1911, 14*12))
+procedure_count[:,1] = Any_procedure
+
+
+Abdominal_hernia_repair = vcat(fill(0, 8*12),  fill(0, 8*12),   fill(18, 5*12), fill(54, 5*12), fill(101, 5*12), fill(168, 5*12),  
+                            fill(216, 5*12),fill(235, 5*12), fill(273, 5*12), fill(224, 5*12), fill(577, 5*12), fill(467, 5*12),
+                            fill(313, 5*12),fill(148, 5*12), fill(84, 14*12))
+procedure_count[:,2] = Abdominal_hernia_repair
+
+Appendectomy = vcat(fill(0, 8*12),   fill(829, 8*12), fill(438, 5*12), fill(535, 5*12), fill(571, 5*12), fill(521, 5*12), 
+                    fill(533, 5*12), fill(535, 5*12), fill(548, 5*12), fill(347, 5*12), fill(746, 5*12), fill(518, 5*12), 
+                    fill(295, 5*12), fill(164, 5*12), fill(89, 14*12))
+procedure_count[:,3] = Appendectomy
+
+Cholecystectomy = vcat(fill(0, 8*12),   fill(1295, 8*12), fill(1271, 5*12), fill(1723, 5*12), fill(1747, 5*12), fill(1859, 5*12), 
+                    fill(2029, 5*12),fill(2059, 5*12), fill(2146, 5*12), fill(1616, 5*12), fill(3950, 5*12), fill(3096, 5*12), 
+                    fill(2030, 5*12),fill(1197, 5*12), fill(825, 14*12))
+procedure_count[:,4] = Cholecystectomy
+
+Colectomy = vcat(fill(0, 8*12),   fill(87, 8*12),   fill(66, 5*12),  fill(74, 5*12),  fill(101, 5*12),  fill(147, 5*12), 
+                fill(217, 5*12), fill(333, 5*12),  fill(440, 5*12), fill(493, 5*12), fill(1313, 5*12), fill(1400, 5*12), 
+                fill(1305, 5*12),fill(1011, 5*12), fill(840, 14*12))
+procedure_count[:,5] = Colectomy
+
+Gastric_bypass = vcat(fill(0, 8*12),   fill(19, 8*12),  fill(35, 5*12),  fill(100, 5*12), fill(119, 5*12), fill(127, 5*12), 
+                    fill(164, 5*12), fill(185, 5*12), fill(161, 5*12), fill(116, 5*12), fill(176, 5*12), fill(39, 5*12), 
+                    fill(0, 5*12),   fill(0, 5*12),   fill(0, 14*12))
+procedure_count[:,6] = Gastric_bypass
+
+Hysterectomy = vcat(fill(0, 8*12),   fill(0, 8*12),   fill(11, 5*12),  fill(64, 5*12), fill(227, 5*12), fill(619, 5*12), 
+                    fill(809, 5*12), fill(428, 5*12), fill(142, 5*12), fill(93, 5*12), fill(206, 5*12), fill(187, 5*12), 
+                    fill(83, 5*12),  fill(40, 5*12),  fill(14, 14*12))
+procedure_count[:,7] = Hysterectomy
+
+BTL = vcat(fill(0, 8*12),   fill(1132, 8*12), fill(1919, 5*12), fill(3158, 5*12), fill(2398, 5*12), fill(726, 5*12), 
+        fill(144, 5*12), fill(18, 5*12),   fill(0, 5*12),    fill(0, 5*12),    fill(0, 5*12),    fill(0, 5*12), 
+        fill(0, 5*12),   fill(0, 5*12),    fill(0, 14*12))
+procedure_count[:,8] = BTL
+
+# convert the number of cases to probability of taking treatment
+population = vcat(fill(1, 8*12),     fill(479472,8*12), fill(303952,5*12), fill(359533,5*12), fill(373973,5*12), 
+                fill(359174, 5*12),fill(385985,5*12), fill(398822,5*12), fill(439411,5*12), fill(330916,5*12),
+                fill(874465,5*12), fill(753484, 5*12), fill(530157,5*12),fill(347809,5*12), fill(377749,14*12))
+
+# Calculate monthly rate that woman takes surgery
+procedure_rate_matrix = procedure_count ./ population
+procedure_rate_matrix = 1 .-exp.(-(procedure_rate_matrix) .*(1/12))     # Converting annual prob. to monthly prob.
+#(i,j)th entry is probability woman undergoes procedure j during cycle i
+
+strategies = Dict("everyone" =>fill(1, 7, 1080), 
+                "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
+                "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600)))
+                )
+
+opportunistic_rates = strategies[strategy]
+
+
+acceptance_rates = [0.1, 0.2, 0.3, 0.4, 0.5]
+
 
 for acceptance_rate in acceptance_rates
 
@@ -218,6 +220,7 @@ for acceptance_rate in acceptance_rates
         salpingectomy_done = false
         t_diag = sim_res.time_at_diagnosis[individual]
         t_prev = sim_res.time_at_1[individual]
+        hist = sim_res.OvC_histology[individual]
         max_cycle = (t_diag == 0) ? 1080 : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
         cycle = 1
 
@@ -242,7 +245,7 @@ for acceptance_rate in acceptance_rates
                 decision = sample(rng, [true, false], Weights([opp_acceptence, 1 - opp_acceptence]))
             
                 # Eligable only if no cancer ever or salpingectomy happens before cancer onset
-                eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev)))
+                eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev))) && (hist == "HGSC")
 
                 #health_state = health_states[individual, cycle]
                 
@@ -282,6 +285,7 @@ for acceptance_rate in acceptance_rates
 
         rng = MersenneTwister(individual+1234)
         t_diag = sim_res.time_at_diagnosis[individual]
+        hist = sim_res.OvC_histology[individual]
 
         # If already got salpingectomy opportunistically, skip
         if time_salpingectomy[individual] != 0
@@ -313,7 +317,7 @@ for acceptance_rate in acceptance_rates
         time_salpingectomy[individual] = t_salpingectomy
 
         t_prev = sim_res.time_at_1[individual]
-        eligible = (t_prev == 0.0) || (t_salpingectomy <= Int(floor(t_prev)))
+        eligible = (t_prev == 0.0) || (t_salpingectomy <= Int(floor(t_prev))) && (hist == "HGSC")
 
         if eligible
             t_eff = sample(rng, [t_salpingectomy, 0], Weights([1 - relative_risk_OvC, relative_risk_OvC]))
