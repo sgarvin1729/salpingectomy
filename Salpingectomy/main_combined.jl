@@ -200,7 +200,7 @@ opportunistic_rates = strategies[strategy]
 
 #acceptance_rates = [0.1, 0.2, 0.3, 0.4, 0.5]
 
-for failure_rate in [0.56, 0.57, 0.58, 0.59, 0.60, 0.61, 0.62, 0.63, 0.64]
+for failure_rate in [0.57, 0.58, 0.59, 0.60, 0.61, 0.62, 0.63, 0.64]
 
     println("Relative risk of OvC: ", failure_rate)
 
