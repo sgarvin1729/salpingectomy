@@ -388,18 +388,22 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
             println("Reduction: ", round(mortality_reduction, digits=4))
 
-            println("Reduction (HGSC): ", round(mortality_reduction_HGSC, digits=4))
+            #println("Reduction (HGSC): ", round(mortality_reduction_HGSC, digits=4))
 
             push!(reduction_vec, round(mortality_reduction, digits=4))
 
-            push!(reduction_vec_HGSC, round(mortality_reduction_HGSC, digits=4))
+            #push!(reduction_vec_HGSC, round(mortality_reduction_HGSC, digits=4))
 
         end
 
-        df = DataFrame(reduction = reduction_vec, reduction_HGSC = reduction_vec_HGSC)
-
-        CSV.write("reduction.csv", df) 
-
     end 
+
+    println("Reduction per age is:")
+    
+    println(reduction_vec)
+
+    df = DataFrame(reduction = reduction_vec)
+
+    CSV.write("reduction.csv", df) 
 
 end
