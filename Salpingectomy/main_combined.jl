@@ -320,9 +320,9 @@ for failure_rate in [0.56, 0.57, 0.58, 0.59, 0.60, 0.61, 0.62, 0.63, 0.64]
             end
 
             # Checking if we ever accept
-            if rand(rng) >= acceptance_rate
-                continue
-            end
+            #if rand(rng) >= acceptance_rate
+            #    continue
+            #end
 
             # death time handling
             raw_time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
