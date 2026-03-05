@@ -239,6 +239,8 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     
     println("2")
     @sync @distributed for individual in 1:nrow(sim_res)   
+
+        println(individual)
         
         rng = MersenneTwister(1234 + individual)
         salpingectomy_done = false
