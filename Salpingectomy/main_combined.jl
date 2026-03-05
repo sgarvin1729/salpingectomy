@@ -195,7 +195,7 @@ procedure_rate_matrix = 1 .-exp.(-(procedure_rate_matrix) .*(1/12))     # Conver
 strategies = Dict("everyone" =>fill(1, 7, 1080), 
                 "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
                 "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600))),
-                "2percent" => repeat(hcat(fill(0, 1, 240), collect(0.02:0.02/12:1.0)', fill(1, 1, 251)), 6, 1)
+                "2percent" => repeat(hcat(fill(0, 1, 240), collect(0.02:0.02/12:1.0)', fill(1, 1, 251)), 7, 1)
                 )
 
 opportunistic_rates = strategies[strategy]
@@ -443,6 +443,6 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
     #CSV.write("reduction.csv", df) 
 
-    
+
 
 end
