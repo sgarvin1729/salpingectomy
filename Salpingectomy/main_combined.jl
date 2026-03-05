@@ -200,6 +200,8 @@ strategies = Dict("everyone" =>fill(1, 7, 1080),
 
 opportunistic_rates = strategies[strategy]
 
+println("1")
+
 
 #acceptance_rates = [0.1, 0.2, 0.3, 0.4, 0.5]
 
@@ -235,7 +237,9 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 
     
+    println("2")
     @sync @distributed for individual in 1:nrow(sim_res)   
+        
         rng = MersenneTwister(1234 + individual)
         salpingectomy_done = false
         t_diag = sim_res.time_at_diagnosis[individual]
@@ -247,13 +251,16 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         max_cycle = (t_diag == 0) ? time_death_int : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
         cycle = 1
 
+
         while cycle <= max_cycle && !salpingectomy_done
+    
             #Check if this women takes abdominal surgery
             @views rates = procedure_rate_matrix[cycle, 2:8]
             select_surgery = sample(rng, 1:8, Weights(vcat(1 - sum(rates), rates))) # 1 = no surgery
                             
             if select_surgery >= 2  # Take surgery
                 
+
                 if time_surgery[individual, select_surgery-1] !== 0
                     # Don't take surgery, since the women already took the surgery before.
                     cycle += 1
@@ -301,14 +308,17 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         end
     end
 
+    println("3")
+
     twopercentweights = hcat(fill(0, 1, 20), collect(0.02:0.02:1)', fill(1, 1, 20))
+
+    println("4")
     
     # Non-opportunistic salpingectomy after some age
 
     @sync @distributed for individual in 1:nrow(sim_res)
 
         
-
         rng = MersenneTwister(individual+1234)
         t_diag = sim_res.time_at_diagnosis[individual]
         hist = sim_res.OvC_histology[individual]
@@ -384,6 +394,8 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         #should update time of surgery in the future, checking diagnosis time
     end
 
+    print("5")
+
     sim_res.time_salpingectomy = time_salpingectomy
     sim_res.time_effective_salpingectomy = time_effective_salpingectomy
     sim_res.time_OvC_death_Salpingectomy = time_OvC_death_Salpingectomy
@@ -430,5 +442,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     #df = DataFrame(reduction = reduction_vec)
 
     #CSV.write("reduction.csv", df) 
+
+    
 
 end
