@@ -356,8 +356,12 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
                     if actually_effective
                         time_OvC_death_Salpingectomy[individual] = 0
                         time_effective_salpingectomy[individual] = age_to_start_cycle(age)
+                    end
+                end
+            end
             
             age += 1
+        end
 
         #t_salpingectomy = sample(rng, collect(idxs), Weights(w))
 
