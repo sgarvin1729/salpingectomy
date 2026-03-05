@@ -123,7 +123,7 @@ end
 
 time_weights = build_nonopp_weights_uniform() 
 
-strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
 #time_weights = time_weights_list[i]
 
@@ -197,6 +197,8 @@ strategies = Dict("everyone" =>fill(1, 7, 1080),
                 "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600))),
                 "twopercent" => vcat(fill(0.0, 240), 0.02:0.02/12:1.0, fill(1.0, 251))' .* ones(7,1)
                 )
+
+println(size(vcat(fill(0.0, 240), 0.02:0.02/12:1.0, fill(1.0, 251))' .* ones(7,1)))
 
 opportunistic_rates = strategies[strategy]
 
