@@ -26,6 +26,7 @@
 
 using Distributed
 num_node = 40
+rmprocs(workers()) 
 addprocs(num_node-1)
 
 @everywhere begin
@@ -121,9 +122,9 @@ end
 
 #time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear(0.0, 1.0, 10, 50), build_nonopp_weights_linear(0.5, 1.0, 10, 50), build_nonopp_weights_exp(10, log(2)/40), build_nonopp_weights_jump(50, 0.0, 1.0), build_nonopp_weights_jump(50, 0.25, 0.5)]
 
-time_weights = build_nonopp_weights_uniform() 
+#time_weights = build_nonopp_weights_uniform() 
 
-strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
 #time_weights = time_weights_list[i]
 
