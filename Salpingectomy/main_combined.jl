@@ -343,7 +343,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
         while age <= time_death_int_year
 
-            rate = twopercentweights[age - 9]
+            rate = twopercentweights[1, age - 9]
 
             decision = sample(rng, [true, false], [rate, 1-rate])
 
