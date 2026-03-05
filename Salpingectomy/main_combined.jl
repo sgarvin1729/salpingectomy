@@ -239,11 +239,20 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
     time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 
+    @everywhere opportunistic_rates = $opportunistic_rates
+    @everywhere procedure_rate_matrix = $procedure_rate_matrix
+    @everywhere relative_risk_OvC = $relative_risk_OvC
+
     
     println("2")
     @sync @distributed for individual in 1:nrow(sim_res)   
 
         println(individual)
+        @everywhere begin
+            println("Worker $(myid()) sees opportunistic_rates of size ", size(opportunistic_rates))
+            println("Worker $(myid()) sees procedure_rate_matrix of size ", size(procedure_rate_matrix))
+            println("Worker $(myid()) sees relative_risk_OvC = ", relative_risk_OvC)
+        end
         
         rng = MersenneTwister(1234 + individual)
         salpingectomy_done = false
