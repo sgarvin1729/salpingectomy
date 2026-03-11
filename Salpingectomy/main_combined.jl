@@ -284,6 +284,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         end
     end
 
+    twopercentweights = hcat(fill(0, 1, 20), collect(0.02:0.02:1)', fill(1, 1, 20))
 
     # Non-opportunistic salpingectomy after some age
 
@@ -299,9 +300,9 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         end
 
         # Checking if we ever accept
-        if rand(rng) >= acceptance_rate
-            continue
-        end
+        #if rand(rng) >= acceptance_rate
+        #    continue
+        #end
 
         # death time handling
         raw_time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
