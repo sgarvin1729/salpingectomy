@@ -210,7 +210,7 @@ for failure_rate in [0.57, 0.58, 0.59, 0.60, 0.61, 0.62, 0.63, 0.64]
         time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 
         
-        #=@sync @distributed for individual in 1:nrow(sim_res)   
+        @sync @distributed for individual in 1:nrow(sim_res)   
             rng = MersenneTwister(1234 + individual)
             salpingectomy_done = false
             t_diag = sim_res.time_at_diagnosis[individual]
@@ -277,7 +277,7 @@ for failure_rate in [0.57, 0.58, 0.59, 0.60, 0.61, 0.62, 0.63, 0.64]
                 cycle += 1      
             end
         end
-        =#
+        
 
 
         # Non-opportunistic salpingectomy after some age
