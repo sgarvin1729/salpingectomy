@@ -262,7 +262,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
                     time_salpingectomy[individual] = cycle
                     if eligible
                         # same code as before
-                        effective_salpingectomy = sample(rng, [cycle, 0], Weights([1-relative_risk_OvC, relative_risk_OvC]))
+                        effective_salpingectomy = sample(rng, [cycle, 0], Weights([1-failure_rate, failure_rate]))
                         if effective_salpingectomy > 0
                             time_OvC_death_Salpingectomy[individual] = 0
                             time_effective_salpingectomy[individual] = effective_salpingectomy
