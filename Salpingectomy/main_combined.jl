@@ -327,7 +327,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
             rate = twopercentweights[1, age - 9]
 
-            decision = sample(rng, [true, false], [rate, 1-rate])
+            decision = sample(rng, [true, false], Weights([rate, 1-rate]))
 
             possibly_effective = (t_prev == 0.0 || age_to_start_cycle(age) <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)  
 
