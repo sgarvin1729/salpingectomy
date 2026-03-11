@@ -310,7 +310,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         time_death = (raw_time_death == 0) ? 1080 : min(raw_time_death, 1080)
         time_death_int = Int(floor(time_death))
 
-        time_death_int_year = Int(floor(time_death_int/12)) + 10
+        time_death_int_year = Int(floor((maximum([0, time_death_int-1]))/12)) + 10
         t_prev = sim_res.time_at_1[individual]
 
         #idxs = 1:time_death_int
