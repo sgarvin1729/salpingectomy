@@ -113,7 +113,7 @@ end
 
 time_weights = build_nonopp_weights_uniform() 
 
-strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
 #time_weights = time_weights_list[i]
 
@@ -182,16 +182,17 @@ procedure_rate_matrix = 1 .-exp.(-(procedure_rate_matrix) .*(1/12))     # Conver
 
 strategies = Dict("everyone" =>fill(1, 7, 1080), 
                 "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
-                "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600)))
+                "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600))),
+                "twopercent" => vcat(fill(0.0, 240), 0.02:0.02/12:1.0, fill(1.0, 251))' .* ones(7,1)
                 )
 
 opportunistic_rates = strategies[strategy]
 
 
-acceptance_rates = [0.1, 0.2, 0.3, 0.4, 0.5]
+#acceptance_rates = [0.1, 0.2, 0.3, 0.4, 0.5]
 
 
-for acceptance_rate in acceptance_rates
+for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
     # Define non-opportunistic salpingectomy parameters
     # for non-opportunistic salpingectomy, set acceptance rate
