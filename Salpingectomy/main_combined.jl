@@ -288,8 +288,9 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
     # Non-opportunistic salpingectomy after some age
 
-    @sync @distributed for individual in 1:nrow(sim_res)
+   @sync @distributed for individual in 1:nrow(sim_res)
 
+        
         rng = MersenneTwister(individual+1234)
         t_diag = sim_res.time_at_diagnosis[individual]
         hist = sim_res.OvC_histology[individual]
@@ -309,33 +310,63 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         time_death = (raw_time_death == 0) ? 1080 : min(raw_time_death, 1080)
         time_death_int = Int(floor(time_death))
 
-        idxs = 1:time_death_int
-        w = time_weights[idxs]
+        time_death_int_year = Int(floor(time_death_int/12)) + 10
+        t_prev = sim_res.time_at_1[individual]
+
+        #idxs = 1:time_death_int
+        #w = time_weights[idxs]
 
         # if weights are all zero, skip
-        if all(==(0.0), w)
-            continue
+        #if all(==(0.0), w)
+         #   continue
+        #end
+
+        age = 10
+
+        while age <= time_death_int_year
+
+            rate = twopercentweights[1, age - 9]
+
+            decision = sample(rng, [true, false], [rate, 1-rate])
+
+            possibly_effective = (t_prev == 0.0 || age_to_start_cycle(age) <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)  
+
+            if decision
+                time_salpingectomy[individual] = age_to_start_cycle(age)
+                if possibly_effective
+                    actually_effective = sample(rng, [true, false], Weights([1 - failure_rate, failure_rate]))
+                    if actually_effective
+                        time_OvC_death_Salpingectomy[individual] = 0
+                        time_effective_salpingectomy[individual] = age_to_start_cycle(age)
+                    end
+                end
+            end
+            
+            age += 1
         end
 
-        t_salpingectomy = sample(rng, collect(idxs), Weights(w))
+        #t_salpingectomy = sample(rng, collect(idxs), Weights(w))
 
         # 3) Age-dependent acceptance filter (piecewise acceptance if specified)
 
-        time_salpingectomy[individual] = t_salpingectomy
+        #=time_salpingectomy[individual] = t_salpingectomy
 
         t_prev = sim_res.time_at_1[individual]
-        eligible = (t_prev == 0.0 || t_salpingectomy <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)
+        eligible = (t_prev == 0.0 || t_salpingectomy <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)  
 
         if eligible
-            t_eff = sample(rng, [t_salpingectomy, 0], Weights([1 - relative_risk_OvC, relative_risk_OvC]))
+            t_eff = sample(rng, [t_salpingectomy, 0], Weights([1 - failure_rate, failure_rate]))
             if t_eff > 0
                 time_OvC_death_Salpingectomy[individual] = 0
                 time_effective_salpingectomy[individual] = t_eff
             end
         end
+        =#
 
         #should update time of surgery in the future, checking diagnosis time
     end
+
+    print("5")
 
     sim_res.time_salpingectomy = time_salpingectomy
     sim_res.time_effective_salpingectomy = time_effective_salpingectomy
@@ -355,18 +386,35 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     before = filter(x->x.time_at_OvarianDeath > 0.0, sim_res)                                      
     after  = filter(x->x.time_OvC_death_Salpingectomy > 0.0, sim_res)       
     
-    before_HGSC = filter(x->(x.time_at_OvarianDeath > 0.0) && (x.OvC_histology == "HGSC"), sim_res)
+    #before_HGSC = filter(x->(x.time_at_OvarianDeath > 0.0) && (x.OvC_histology == "HGSC"), sim_res)
 
-    after_HGSC  = filter(x->(x.time_OvC_death_Salpingectomy > 0.0) && (x.OvC_histology == "HGSC"), sim_res)  
+    #after_HGSC  = filter(x->(x.time_OvC_death_Salpingectomy > 0.0) && (x.OvC_histology == "HGSC"), sim_res)  
 
     mortality_reduction = 1 - nrow(after)/nrow(before)
 
-    mortality_reduction_HGSC = 1 - nrow(after_HGSC)/nrow(before_HGSC)
+    #mortality_reduction_HGSC = 1 - nrow(after_HGSC)/nrow(before_HGSC)
+
+    #println("age: ", age)
 
     println("Reduction: ", round(mortality_reduction, digits=4))
 
-    println("Reduction (HGSC): ", round(mortality_reduction_HGSC, digits=4))
+    #if mortality_reduction <= 0.2
+    #    break
+    #end
+
+    #println("Reduction (HGSC): ", round(mortality_reduction_HGSC, digits=4))
+
+    #push!(reduction_vec, round(mortality_reduction, digits=4))
+
+    #push!(reduction_vec_HGSC, round(mortality_reduction_HGSC, digits=4))
+
+    
+    println(round(mortality_reduction, digits=4))
+
+    #df = DataFrame(reduction = reduction_vec)
+
+    #CSV.write("reduction.csv", df) 
 
 
 
-end 
+end
