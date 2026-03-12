@@ -343,7 +343,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
                 break
             end
             
-            age += 1
+            age += 5
             
         end
 
