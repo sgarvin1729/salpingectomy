@@ -340,9 +340,10 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
                         time_effective_salpingectomy[individual] = age_to_start_cycle(age)
                     end
                 end
+                break
             end
             
-            age += 10
+            age += 1
             
         end
 
