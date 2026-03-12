@@ -342,7 +342,8 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
                 end
             end
             
-            age += 1
+            age += 2
+            
         end
 
         #t_salpingectomy = sample(rng, collect(idxs), Weights(w))
@@ -365,8 +366,6 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
         #should update time of surgery in the future, checking diagnosis time
     end
-
-    print("5")
 
     sim_res.time_salpingectomy = time_salpingectomy
     sim_res.time_effective_salpingectomy = time_effective_salpingectomy
