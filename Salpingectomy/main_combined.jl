@@ -122,8 +122,8 @@ relative_risk_OvC = 0.35
 println("Strategy: ", strategy)
 println("Population size: ", population_size)
 println("Relative risk of OvC: ", relative_risk_OvC)
-twopercentweights = exp.(-0.5 .* ((collect(10:100) .- 42) ./ 7).^2)
-println(size(twopercentweights))
+
+
 
 ## Procedure rate
 procedure_count = zeros(90*12, 8)
@@ -285,7 +285,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     end
 
     #twopercentweights = hcat(fill(0, 1, 20), collect(0.02:0.02:1)', fill(1, 1, 20))
-    #twopercentweights = exp.(-0.5 .* ((10:100 .- 42) ./ 7).^2)'
+    twopercentweights = exp.(-0.5 .* ((collect(10:100) .- 42) ./ 7).^2)
 
     # Non-opportunistic salpingectomy after some age
 
@@ -324,7 +324,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
         age = rand(10:time_death_int_year)
 
-        rate = twopercentweights[1, age - 9]
+        rate = twopercentweights[age - 9]
 
         decision = sample(rng, [true, false], Weights([rate, 1-rate]))
 
