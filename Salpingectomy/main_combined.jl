@@ -113,7 +113,7 @@ end
 
 time_weights = build_nonopp_weights_uniform() 
 
-strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
 #time_weights = time_weights_list[i]
 
