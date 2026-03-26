@@ -284,8 +284,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         end
     end
 
-    #twopercentweights = hcat(fill(0, 1, 20), collect(0.02:0.02:1)', fill(1, 1, 20))
-    twopercentweights = exp.(-0.5 .* ((collect(10:100) .- 42) ./ 7).^2)
+    twopercentweights = hcat(fill(0, 1, 20), collect(0.02:0.02:1)', fill(1, 1, 20))
 
     # Non-opportunistic salpingectomy after some age
 
@@ -322,7 +321,13 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
          #   continue
         #end
 
-        age = rand(10:time_death_int_year)
+        ages = 10:time_death_int_year
+
+        weights = exp.(-0.5 .* ((ages .- 42) ./ 7).^2)
+
+        p = weights ./ sum(weights)
+
+        age = sample(ages, Weights(p))
 
         rate = twopercentweights[age - 9]
 
