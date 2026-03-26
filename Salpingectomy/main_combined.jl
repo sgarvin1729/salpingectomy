@@ -117,13 +117,13 @@ strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all",
 
 #time_weights = time_weights_list[i]
 
+age = 50
+
 population_size = 10000000
 relative_risk_OvC = 0.35
 println("Strategy: ", strategy)
 println("Population size: ", population_size)
 println("Relative risk of OvC: ", relative_risk_OvC)
-
-
 
 ## Procedure rate
 procedure_count = zeros(90*12, 8)
@@ -214,8 +214,8 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
     time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
     time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
+    num_salpingectomies          = SharedArray{Int64}(zeros(Int, 91))   
 
-    
     @sync @distributed for individual in 1:nrow(sim_res)   
         rng = MersenneTwister(1234 + individual)
         salpingectomy_done = false
@@ -260,6 +260,9 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
                 if decision == true
                     salpingectomy_done = true
                     time_salpingectomy[individual] = cycle
+                    
+                    num_salpingectomies[Int(floor((cycle-1)/12))+10] += 1
+
                     if eligible
                         # same code as before
                         effective_salpingectomy = sample(rng, [cycle, 0], Weights([1-failure_rate, failure_rate]))
@@ -321,35 +324,32 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
          #   continue
         #end
 
-        ages = 10:time_death_int_year
+        age = 10
 
-        weights = exp.(-0.5 .* ((ages .- 42) ./ 7).^2)
+        while age <= time_death_int_year
 
-        p = weights ./ sum(weights)
+            rate = twopercentweights[1, age - 9]
 
-        age = sample(ages, Weights(p))
+            decision = sample(rng, [true, false], Weights([rate, 1-rate]))
 
-        rate = twopercentweights[age - 9]
+            possibly_effective = (t_prev == 0.0 || age_to_start_cycle(age) <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)  
 
-        decision = sample(rng, [true, false], Weights([rate, 1-rate]))
-
-        possibly_effective = (t_prev == 0.0 || age_to_start_cycle(age) <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)  
-
-        if decision
-            time_salpingectomy[individual] = age_to_start_cycle(age)
-            if possibly_effective
-                actually_effective = sample(rng, [true, false], Weights([1 - failure_rate, failure_rate]))
-                if actually_effective
-                    time_OvC_death_Salpingectomy[individual] = 0
-                    time_effective_salpingectomy[individual] = age_to_start_cycle(age)
+            if decision
+                time_salpingectomy[individual] = age_to_start_cycle(age)
+                num_salpingectomies[age] += 1
+                if possibly_effective
+                    actually_effective = sample(rng, [true, false], Weights([1 - failure_rate, failure_rate]))
+                    if actually_effective
+                        time_OvC_death_Salpingectomy[individual] = 0
+                        time_effective_salpingectomy[individual] = age_to_start_cycle(age)
+                    end
                 end
+                break
             end
-            break
+            
+            age += 1
+            
         end
-            
-    
-            
-
 
         #t_salpingectomy = sample(rng, collect(idxs), Weights(w))
 
@@ -414,6 +414,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
     
     println(round(mortality_reduction, digits=4))
+    print(num_salpingectomies)
 
     #df = DataFrame(reduction = reduction_vec)
 
