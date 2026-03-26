@@ -321,31 +321,29 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
          #   continue
         #end
 
-        age = 10
+        age = rand(10:time_death_int_year)
 
-        while age <= time_death_int_year
+        rate = twopercentweights[1, age - 9]
 
-            rate = twopercentweights[1, age - 9]
+        decision = sample(rng, [true, false], Weights([rate, 1-rate]))
 
-            decision = sample(rng, [true, false], Weights([rate, 1-rate]))
+        possibly_effective = (t_prev == 0.0 || age_to_start_cycle(age) <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)  
 
-            possibly_effective = (t_prev == 0.0 || age_to_start_cycle(age) <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)  
-
-            if decision
-                time_salpingectomy[individual] = age_to_start_cycle(age)
-                if possibly_effective
-                    actually_effective = sample(rng, [true, false], Weights([1 - failure_rate, failure_rate]))
-                    if actually_effective
-                        time_OvC_death_Salpingectomy[individual] = 0
-                        time_effective_salpingectomy[individual] = age_to_start_cycle(age)
-                    end
+        if decision
+            time_salpingectomy[individual] = age_to_start_cycle(age)
+            if possibly_effective
+                actually_effective = sample(rng, [true, false], Weights([1 - failure_rate, failure_rate]))
+                if actually_effective
+                    time_OvC_death_Salpingectomy[individual] = 0
+                    time_effective_salpingectomy[individual] = age_to_start_cycle(age)
                 end
-                break
             end
-            
-            age += 10
-            
+            break
         end
+            
+    
+            
+
 
         #t_salpingectomy = sample(rng, collect(idxs), Weights(w))
 
