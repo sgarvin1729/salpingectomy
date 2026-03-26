@@ -122,7 +122,7 @@ relative_risk_OvC = 0.35
 println("Strategy: ", strategy)
 println("Population size: ", population_size)
 println("Relative risk of OvC: ", relative_risk_OvC)
-twopercentweights = exp.(-0.5 .* ((10:100 .- 42) ./ 7).^2)'
+twopercentweights = exp.(-0.5 .* ((collect(10:100) .- 42) ./ 7).^2)
 println(size(twopercentweights))
 
 ## Procedure rate
