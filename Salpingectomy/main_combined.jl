@@ -117,8 +117,6 @@ strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all",
 
 #time_weights = time_weights_list[i]
 
-age = 50
-
 population_size = 10000000
 relative_risk_OvC = 0.35
 println("Strategy: ", strategy)
@@ -287,7 +285,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     end
 
     #twopercentweights = hcat(fill(0, 1, 20), collect(0.02:0.02:1)', fill(1, 1, 20))
-    twopercentweights = exp.(-0.5 .* ((10:100 .- 42) ./ 7).^2)'
+    #twopercentweights = exp.(-0.5 .* ((10:100 .- 42) ./ 7).^2)'
 
     # Non-opportunistic salpingectomy after some age
 
