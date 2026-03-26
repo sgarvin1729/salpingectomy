@@ -113,7 +113,7 @@ end
 
 time_weights = build_nonopp_weights_uniform() 
 
-strategy = "everyone" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
 
 #time_weights = time_weights_list[i]
 
@@ -285,7 +285,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     end
 
     #twopercentweights = hcat(fill(0, 1, 20), collect(0.02:0.02:1)', fill(1, 1, 20))
-    twopercentweights = exp.(-0.5 .* ((10:time_death_int_year .- 42) ./ 7).^2)'
+    twopercentweights = exp.(-0.5 .* ((10:99 .- 42) ./ 7).^2)'
 
     # Non-opportunistic salpingectomy after some age
 
