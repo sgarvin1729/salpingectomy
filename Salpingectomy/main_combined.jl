@@ -261,7 +261,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
                     salpingectomy_done = true
                     time_salpingectomy[individual] = cycle
                     
-                    num_salpingectomies[Int(floor((cycle-1)/12))+10] += 1
+                    num_salpingectomies[Int(floor((cycle-1)/12))+10-9] += 1
 
                     if eligible
                         # same code as before
@@ -336,7 +336,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
             if decision
                 time_salpingectomy[individual] = age_to_start_cycle(age)
-                num_salpingectomies[age] += 1
+                num_salpingectomies[age-9] += 1
                 if possibly_effective
                     actually_effective = sample(rng, [true, false], Weights([1 - failure_rate, failure_rate]))
                     if actually_effective
