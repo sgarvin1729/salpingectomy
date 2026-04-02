@@ -112,9 +112,9 @@ end
 
 twentypercenteverytenyears = zeros(1080)
 
-for k in 1:6
-    idx = 361 + 120*(k-1)
-    twentypercenteverytenyears[idx] = min(0.2 * k, 1.0)
+for k in 1:60
+    idx = 361 + 12*k
+    twentypercenteverytenyears[idx] = min(0.005*k, 0.1)
 end
 
 uniformthirtysixtynormalfortyfiveseven = zeros(1080)
@@ -125,7 +125,7 @@ agesvector = [10 + (i-1)/12 for i in 1:1080]
 f(a) = pdf(Normal(45,7), a)
 
 # Step 1–2: raw vector
-g = [a <= 50 ? f(a) : 0.0 for a in agesvector]
+g = [f(a) for a in agesvector]
 
 # X distribution weights (uniform on 30–60)
 px = [(30 <= a <= 60) ? 1/30 : 0.0 for a in agesvector]
@@ -143,8 +143,8 @@ uniformthirtysixtynormalfortyfiveseven = [min(c * gi, 1.0) for gi in g]
 
 time_weights = build_nonopp_weights_uniform() 
 
-opp_strategy = "uniformthirtysixtynormalfortyfiveseven" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
-non_opp_strategy = "uniformthirtysixtynormalfortyfiveseven"
+opp_strategy = "twentypercenteverytenyears" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+non_opp_strategy = "twentypercenteverytenyears"
 
 #time_weights = time_weights_list[i]
 
@@ -264,8 +264,6 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         max_cycle = (t_diag == 0) ? time_death_int : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
         cycle = 1
 
-        ages = rand(Uniform(30, 60), 5)
-
         # Convert ages to month indices 
         months = round.(Int, 1 .+ (ages .- 10) .* 12)
 
@@ -295,13 +293,11 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
             end
 
-            non_opp_decision = false
 
-            if cycle in months 
-                non_opp_acceptance = non_opportunistic_rates[cycle]
-                non_opp_decision = sample(rng, [true, false], Weights([non_opp_acceptance, 1 - non_opp_acceptance]))
+            non_opp_acceptance = non_opportunistic_rates[cycle]
+            non_opp_decision = sample(rng, [true, false], Weights([non_opp_acceptance, 1 - non_opp_acceptance]))
 
-            end
+
             #[code for if she decides to take it non-opportunistically]
         
             # Eligable only if no cancer ever or salpingectomy happens before cancer onset
