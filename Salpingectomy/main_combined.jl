@@ -114,7 +114,7 @@ twentypercenteverytenyears = zeros(1080)
 
 for k in 1:69
     idx = 241 + 12*k
-    twentypercenteverytenyears[idx] = min(0.002*k, 0.1)
+    twentypercenteverytenyears[idx] = min(0.001*k, 0.1)
 end
 
 uniformthirtysixtynormalfortyfiveseven = zeros(1080)
