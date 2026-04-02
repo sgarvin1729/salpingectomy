@@ -251,6 +251,8 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
     num_salpingectomies          = SharedArray{Int64}(zeros(Int, 91))   
 
+    println(nrow(sim_res))
+
     println("here2")
     @sync @distributed for individual in 1:nrow(sim_res) 
         rng = MersenneTwister(1234 + individual)
