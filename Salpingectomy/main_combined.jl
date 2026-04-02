@@ -265,7 +265,6 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         cycle = 1
 
         # Convert ages to month indices 
-        months = round.(Int, 1 .+ (ages .- 10) .* 12)
 
         while cycle <= max_cycle && !salpingectomy_done
             #Check if this women takes abdominal surgery
