@@ -301,6 +301,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
                 non_opp_acceptance = non_opportunistic_rates[cycle]
                 non_opp_decision = sample(rng, [true, false], Weights([non_opp_acceptance, 1 - non_opp_acceptance]))
 
+            end
             #[code for if she decides to take it non-opportunistically]
         
             # Eligable only if no cancer ever or salpingectomy happens before cancer onset
