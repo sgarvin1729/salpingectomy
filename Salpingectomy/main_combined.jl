@@ -128,10 +128,8 @@ non_opp_strategy = "twentypercenteverytenyears"
 age = 50
 
 population_size = 10000000
-relative_risk_OvC = 0.35
 println("Strategy: ", opp_strategy)
 println("Population size: ", population_size)
-println("Relative risk of OvC: ", relative_risk_OvC)
 
 ## Procedure rate
 procedure_count = zeros(90*12, 8)
@@ -201,6 +199,7 @@ opportunistic_rates = opp_strategies[opp_strategy]
 non_opportunistic_rates = non_opp_strategies[non_opp_strategy]
 
 for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
+    println("here1")
 
     # Define non-opportunistic salpingectomy parameters
     # for non-opportunistic salpingectomy, set acceptance rate
@@ -224,7 +223,9 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
     num_salpingectomies          = SharedArray{Int64}(zeros(Int, 91))   
 
-    @sync @distributed for individual in 1:nrow(sim_res)   
+    println("here2")
+    @sync @distributed for individual in 1:nrow(sim_res) 
+        println(individual)  
         rng = MersenneTwister(1234 + individual)
         salpingectomy_done = false
         t_diag = sim_res.time_at_diagnosis[individual]
@@ -300,6 +301,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
             cycle += 1         
         end
     end
+    println("here3")
 
     sim_res.time_salpingectomy = time_salpingectomy
     sim_res.time_effective_salpingectomy = time_effective_salpingectomy
