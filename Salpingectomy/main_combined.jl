@@ -129,7 +129,7 @@ age = 50
 
 population_size = 10000000
 relative_risk_OvC = 0.35
-println("Strategy: ", strategy)
+println("Strategy: ", opp_strategy)
 println("Population size: ", population_size)
 println("Relative risk of OvC: ", relative_risk_OvC)
 
