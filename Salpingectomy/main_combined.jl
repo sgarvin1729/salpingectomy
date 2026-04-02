@@ -116,16 +116,36 @@ for k in 1:6
     twentypercenteverytenyears[idx] = min(0.2 * k, 1.0)
 end
 
+uniformthirtysixtynormalfortyfiveseven = zeros(1080)
+
+agesvector = [10 + (i-1)/12 for i in 1:1080]
+
+# Normal pdf
+f(a) = pdf(Normal(45,7), a)
+
+# Step 1–2: raw vector
+g = [a <= 50 ? f(a) : 0.0 for a in agesvector]
+
+# X distribution weights (uniform on 30–60)
+px = [(30 <= a <= 60) ? 1/30 : 0.0 for a in agesvector]
+
+# Normalize px to sum to 1
+px ./= sum(px)
+
+# Step 3: scaling
+c = log(2) / (5 * sum(g .* px))
+
+# Step 4: final vector
+uniformthirtysixtynormalfortyfiveseven = [min(c * gi, 1.0) for gi in g]
+
 #time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear(0.0, 1.0, 10, 50), build_nonopp_weights_linear(0.5, 1.0, 10, 50), build_nonopp_weights_exp(10, log(2)/40), build_nonopp_weights_jump(50, 0.0, 1.0), build_nonopp_weights_jump(50, 0.25, 0.5)]
 
 time_weights = build_nonopp_weights_uniform() 
 
-opp_strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
-non_opp_strategy = "twentypercenteverytenyears"
+opp_strategy = "uniformthirtysixtynormalfortyfiveseven" # Select one from ["everyone", "BTL_only", "Linear_all", "Linear_half"]
+non_opp_strategy = "uniformthirtysixtynormalfortyfiveseven"
 
 #time_weights = time_weights_list[i]
-
-age = 50
 
 population_size = 10000000
 println("Strategy: ", opp_strategy)
@@ -189,10 +209,12 @@ procedure_rate_matrix = 1 .-exp.(-(procedure_rate_matrix) .*(1/12))     # Conver
 opp_strategies = Dict("everyone" =>fill(1, 7, 1080), 
                 "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
                 "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600))),
-                "twopercent" => vcat(fill(0.0, 240), 0.02:0.02/12:1.0, fill(1.0, 251))' .* ones(7,1)
+                "twopercent" => vcat(fill(0.0, 240), 0.02:0.02/12:1.0, fill(1.0, 251))' .* ones(7,1), 
+                "uniformthirtysixtynormalfortyfiveseven" => uniformthirtysixtynormalfortyfiveseven
                 )
 
-non_opp_strategies = Dict("twentypercenteverytenyears" => twentypercenteverytenyears)
+non_opp_strategies = Dict("twentypercenteverytenyears" => twentypercenteverytenyears, 
+                    "uniformthirtysixtynormalfortyfiveseven" => uniformthirtysixtynormalfortyfiveseven)
 
 opportunistic_rates = opp_strategies[opp_strategy]
 
@@ -236,6 +258,11 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
         max_cycle = (t_diag == 0) ? time_death_int : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
         cycle = 1
 
+        ages = rand(Uniform(30, 60), 5)
+
+        # Convert ages to month indices 
+        months = round.(Int, 1 .+ (ages .- 10) .* 12)
+
         while cycle <= max_cycle && !salpingectomy_done
             #Check if this women takes abdominal surgery
             @views rates = procedure_rate_matrix[cycle, 2:8]
@@ -262,8 +289,11 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
 
             end
 
-            non_opp_acceptance = non_opportunistic_rates[cycle]
-            non_opp_decision = sample(rng, [true, false], Weights([non_opp_acceptance, 1 - non_opp_acceptance]))
+            non_opp_decision = false
+
+            if cycle in months 
+                non_opp_acceptance = non_opportunistic_rates[cycle]
+                non_opp_decision = sample(rng, [true, false], Weights([non_opp_acceptance, 1 - non_opp_acceptance]))
 
             #[code for if she decides to take it non-opportunistically]
         
