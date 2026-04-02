@@ -32,6 +32,7 @@ addprocs(num_node-1)
     using CSV, DataFrames, Random
     using StatsBase, SharedArrays
     using Base.Threads
+    using Distributions
 end
 
 @everywhere begin
