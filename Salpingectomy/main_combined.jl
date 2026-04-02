@@ -215,11 +215,16 @@ opp_strategies = Dict("everyone" =>fill(1, 7, 1080),
                 )
 
 non_opp_strategies = Dict("twentypercenteverytenyears" => twentypercenteverytenyears, 
-                    "uniformthirtysixtynormalfortyfiveseven" => uniformthirtysixtynormalfortyfiveseven)
+                    "uniformthirtysixtynormalfortyfiveseven" => uniformthirtysixtynormalfortyfiveseven
+                    )
 
 opportunistic_rates = opp_strategies[opp_strategy]
 
 non_opportunistic_rates = non_opp_strategies[non_opp_strategy]
+
+println(non_opportunistic_rates)
+
+println("here0")
 
 for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     println("here1")
