@@ -210,7 +210,7 @@ procedure_rate_matrix = 1 .-exp.(-(procedure_rate_matrix) .*(1/12))     # Conver
 opp_strategies = Dict("everyone" =>fill(1, 7, 1080), 
                 "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
                 "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600))),
-                "twopercent" => vcat(fill(0.0, 240), 0.02:0.02/12:1.0, fill(1.0, 251))' .* ones(7,1), 
+                "twentypercenteverytenyears" => repeat(twentypercenteverytenyears', 7, 1),
                 "uniformthirtysixtynormalfortyfiveseven" => repeat(uniformthirtysixtynormalfortyfiveseven', 7, 1)
                 )
 
