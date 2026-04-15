@@ -302,6 +302,25 @@ end
 
 println(N)
 
+group_ages = Dict(
+    "under_20" => 10:19,
+    "20_29"    => 20:29,
+    "30_39"    => 30:39,
+    "40_49"    => 40:49,
+    "50_59"    => 50:59,
+    "60_69"    => 60:69,
+    "70_79"    => 70:79,
+    "80_89"    => 80:89,
+    "90_plus"  => 90:100
+)
+
+L = Dict(
+    g => mean(REMAINING_LIFE_YEARS[a] for a in group_ages[g])
+    for g in keys(group_ages)
+)
+
+println(L)
+
 
 # @sync @distributed for individual in 1:nrow(sim_res)   
 #     rng = MersenneTwister(1234 + individual)
