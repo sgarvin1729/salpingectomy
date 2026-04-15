@@ -264,7 +264,7 @@ function age_group(age)
         return "30_39"
     elseif 40 <= age <= 49
         return "40_49"
-    elseif 30 <= age <= 39
+    elseif 50 <= age <= 59
         return "50_59"
     elseif 60 <= age <= 69
         return "60_69"
@@ -282,19 +282,22 @@ groups = ["under_20","20_29","30_39","40_49","50_59","60_69","70_79","80_89","90
 N = Dict(g => 0.0 for g in groups)
 
 for age in 10:99
-
     start_cycle = age_to_start_cycle(age)
     end_cycle = age_to_end_cycle(age)
 
-    # probability of ANY eligible surgery occurring
-    # columns 2:8 are surgeries that allow OS
-    prob_any_surgery = sum(sum(procedure_rate_matrix[start_cycle:end_cycle, 2:8], dims=2))
+    # monthly probability of any eligible surgery that month
+    monthly_any = vec(sum(procedure_rate_matrix[start_cycle:end_cycle, 2:8], dims=2))
 
-    expected_cases = population_size * prob_any_surgery
+    # keep probabilities valid
+    monthly_any = clamp.(monthly_any, 0.0, 1.0)
+
+    # probability of at least one surgery during this age year
+    prob_at_least_one = 1.0 - prod(1 .- monthly_any)
+
+    expected_women = population_size * prob_at_least_one
 
     g = age_group(age)
-
-    N[g] += expected_cases
+    N[g] += expected_women
 end
 
 println(N)
