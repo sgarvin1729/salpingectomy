@@ -34,6 +34,8 @@ addprocs(num_node-1)
     using Statistics
 end
 
+@everywhere include("./inputs/life_expectancy")
+
 @everywhere begin
 
     function age_to_start_cycle(a::Int)   
@@ -120,7 +122,7 @@ strategy = "twopercent" # Select one from ["everyone", "BTL_only", "Linear_all",
 
 age = 50
 
-population_size = 10000000
+population_size = 1000000
 relative_risk_OvC = 0.35
 println("Strategy: ", strategy)
 println("Population size: ", population_size)
@@ -237,12 +239,65 @@ function expected_death_time()
             
         end
     end
-    println(age_avg)
+    # println(age_avg)
 end
 
-expected_death_time()
-remaining_life = Dict(age => age_avg[age] - age for age in ages)
-println(remaining_life)
+# expected_death_time()
+# remaining_life = Dict(age => age_avg[age] - age for age in ages)
+# println(remaining_life)
+# for age in sort(collect(keys(remaining_life)))
+#     println(age, " => ", remaining_life[age])
+# end
+
+
+surgeries_test = ["Abdominal hernia repair", "Appendectomy", "Cholecystectomy", "Colectomy", 
+             "Gastric bypass", "Hysterectomy", "Bilateral tubal ligation"]
+
+
+# define age groups
+function age_group(age)
+    if age < 20
+        return "under_20"
+    elseif 20 <= age <= 29
+        return "20_29"
+    elseif 30 <= age <= 39
+        return "30_39"
+    elseif 40 <= age <= 49
+        return "40_49"
+    elseif 30 <= age <= 39
+        return "50_59"
+    elseif 60 <= age <= 69
+        return "60_69"
+    elseif 70 <= age <= 79
+        return "70_79"
+    elseif 80 <= age <= 89
+        return "80_89"
+    else
+        return "90_plus"
+    end
+end
+
+groups = ["20_29","30_39","40_49","50_59","60_69","70_79","80_89","90_plus"]
+
+N = Dict(g => 0.0 for g in groups)
+
+for age in 10:100
+
+    start_cycle = age_to_start_cycle(age)
+    end_cycle = age_to_end_cycle(age)
+
+    # probability of ANY eligible surgery occurring
+    # columns 2:8 are surgeries that allow OS
+    prob_any_surgery = sum(sum(procedure_rate_matrix[start_cycle:end_cycle, 2:8], dims=2))
+
+    expected_cases = population_size * prob_any_surgery
+
+    g = age_group(age)
+
+    N[g] += expected_cases
+end
+
+println(N)
 
 
 # @sync @distributed for individual in 1:nrow(sim_res)   
