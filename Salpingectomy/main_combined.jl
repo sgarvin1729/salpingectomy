@@ -241,6 +241,8 @@ function expected_death_time()
 end
 
 expected_death_time()
+remaining_life = Dict(age => age_avg[age] - age for age in ages)
+println(remaining_life)
 
 
 # @sync @distributed for individual in 1:nrow(sim_res)   
