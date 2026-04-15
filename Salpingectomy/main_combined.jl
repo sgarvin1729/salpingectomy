@@ -114,7 +114,7 @@ twentypercenteverytenyears = zeros(1080)
 
 for k in 1:69
     idx = 241 + 12*k
-    twentypercenteverytenyears[idx] = min(0.001*k, 0.1)
+    twentypercenteverytenyears[idx] = min(0.005*k, 0.1)
 end
 
 uniformthirtysixtynormalfortyfiveseven = zeros(1080)
@@ -250,6 +250,8 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
     time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
     num_salpingectomies          = SharedArray{Int64}(zeros(Int, 91))   
+    num_cum_salpingectomies      = SharedArray{Int64}(zeros(Int, 91))
+
 
     println(nrow(sim_res))
 
@@ -336,6 +338,8 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     end
     println("here3")
 
+    num_cum_salpingectomies = cumsum(num_salpingectomies)
+
     sim_res.time_salpingectomy = time_salpingectomy
     sim_res.time_effective_salpingectomy = time_effective_salpingectomy
     sim_res.time_OvC_death_Salpingectomy = time_OvC_death_Salpingectomy
@@ -347,9 +351,8 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     sim_res = [sim_res df_surgery]
 
     # Save results as CSV file
-    #CSV.write("./outputs/simulation_results_combined_0.1_$(population_size)_$(strategy)_$(i).csv", sim_res)
-
-
+    CSV.write("./outputs/simulation_results_combined_0_0.5_10_$(failure_rate).csv", sim_res)
+    
     # Calculate mortality reduction after salpingectomy                           
     before = filter(x->x.time_at_OvarianDeath > 0.0, sim_res)                                      
     after  = filter(x->x.time_OvC_death_Salpingectomy > 0.0, sim_res)       
@@ -379,6 +382,7 @@ for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
     
     println(round(mortality_reduction, digits=4))
     print(num_salpingectomies)
+    print(num_cum_salpingectomies)
 
     #df = DataFrame(reduction = reduction_vec)
 
