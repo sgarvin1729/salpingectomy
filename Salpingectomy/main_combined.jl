@@ -23,8 +23,9 @@
 
 # the stragey files need to ouput a dictionary, an age, and a non-opportunistic acceptance rate vector
 ###################################################################################################################################################
-
-
+using Distributed
+num_node = 40
+addprocs(num_node-1)
 
 @everywhere begin
     using CSV, DataFrames, Random
