@@ -281,7 +281,7 @@ groups = ["under_20","20_29","30_39","40_49","50_59","60_69","70_79","80_89","90
 
 N = Dict(g => 0.0 for g in groups)
 
-for age in 10:100
+for age in 10:99
 
     start_cycle = age_to_start_cycle(age)
     end_cycle = age_to_end_cycle(age)
