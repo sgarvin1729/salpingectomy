@@ -107,6 +107,105 @@ end
         return w
     end
 
+    function L1_distance(
+        target_vector::AbstractVector, 
+        starting_vector::AbstractVector
+    )
+        dist = 0
+        for i in eachindex(target_vector, starting_vector)
+            dist += abs(target_vector[i] - starting_vector[i])
+        end
+
+        return dist
+    end
+
+    function run_simulation(
+        sim_res::DataFrame, 
+        procedure_rate_matrix::SharedArray{Float64}, 
+        time_surgery::SharedArray{Float64},
+        time_effective_salpingectomy::SharedArray{Float64},
+        time_OvC_death_Salpingectomy::SharedArray{Float64}, 
+        opportunistic_rates::SharedArray{Float64}
+    )
+
+        @sync @distributed for individual in 1:nrow(sim_res) 
+            rng = MersenneTwister(1234 + individual)
+            salpingectomy_done = false
+            t_diag = sim_res.time_at_diagnosis[individual]
+            t_prev = sim_res.time_at_1[individual]
+            hist = sim_res.OvC_histology[individual]
+            raw_time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
+            time_death = (raw_time_death == 0) ? 1080 : min(raw_time_death, 1080)
+            time_death_int = Int(floor(time_death))
+            max_cycle = (t_diag == 0) ? time_death_int : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
+            cycle = 1
+
+            # Convert ages to month indices 
+
+            while cycle <= max_cycle && !salpingectomy_done
+                #Check if this women takes abdominal surgery
+                @views rates = procedure_rate_matrix[cycle, 2:8]
+                select_surgery = sample(rng, 1:8, Weights(vcat(1 - sum(rates), rates))) # 1 = no surgery
+
+                eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)
+                                
+                opp_decision = false
+                
+                if select_surgery >= 2  # Take surgery
+                    
+                    if time_surgery[individual, select_surgery-1] !== 0
+                        # Don't take surgery, since the women already took the surgery before.
+                        cycle += 1
+                        continue
+                    end
+
+                    time_surgery[individual, select_surgery-1] = cycle
+
+                    # Check if this women takes salpingectomy and the effectiveness if taking salpingectomy
+                    
+                    opp_acceptance = opportunistic_rates[select_surgery-1, cycle]
+                    opp_decision = sample(rng, [true, false], Weights([opp_acceptance, 1 - opp_acceptance]))
+
+                end
+
+                if opp_decision == true
+                    salpingectomy_done = true
+                    time_salpingectomy[individual] = cycle
+                    
+                    if eligible
+                        # same code as before
+                        effective_salpingectomy = sample(rng, [cycle, 0], Weights([1-failure_rate, failure_rate]))
+                        if effective_salpingectomy > 0
+                            time_OvC_death_Salpingectomy[individual] = 0
+                            time_effective_salpingectomy[individual] = effective_salpingectomy
+                        else
+                            time_effective_salpingectomy[individual] = 0
+                        end
+                    else
+                        # Not eligible, so no effect
+                        time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
+                        time_effective_salpingectomy[individual] = 0
+                    end
+                else
+                    # Did not take salpingectomy
+                    time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
+                    time_effective_salpingectomy[individual] = 0
+                end              
+
+                cycle += 1         
+            end
+        end
+        println("here3")
+                        
+        before = filter(x->x.time_at_OvarianDeath > 0.0, sim_res)                                      
+        after  = filter(x->x.time_OvC_death_Salpingectomy > 0.0, sim_res)       
+        
+        mortality_reduction = 1 - nrow(after)/nrow(before)
+
+        return round(mortality_reduction, digits=4)
+
+    end 
+
 end
 
 twentypercenteverytenyears = zeros(1080)
@@ -115,30 +214,6 @@ for k in 1:69
     idx = 241 + 12*k
     twentypercenteverytenyears[idx] = min(0.002*k, 0.05)
 end
-
-uniformthirtysixtynormalfortyfiveseven = zeros(1080)
-
-agesvector = [10 + (i-1)/12 for i in 1:1080]
-
-# Normal pdf
-f(a) = pdf(Normal(45,7), a)
-
-# Step 1–2: raw vector
-g = [f(a) for a in agesvector]
-
-# X distribution weights (uniform on 30–60)
-px = [(30 <= a <= 60) ? 1/30 : 0.0 for a in agesvector]
-
-# Normalize px to sum to 1
-px ./= sum(px)
-
-# Step 3: scaling
-c = log(2) / (5 * sum(g .* px))
-
-# Step 4: final vector
-uniformthirtysixtynormalfortyfiveseven = [min(c * gi, 1.0) for gi in g]
-
-#time_weights_list = [build_nonopp_weights_uniform(), build_nonopp_weights_linear(0.0, 1.0, 10, 50), build_nonopp_weights_linear(0.5, 1.0, 10, 50), build_nonopp_weights_exp(10, log(2)/40), build_nonopp_weights_jump(50, 0.0, 1.0), build_nonopp_weights_jump(50, 0.25, 0.5)]
 
 time_weights = build_nonopp_weights_uniform() 
 
@@ -225,166 +300,64 @@ println(non_opportunistic_rates)
 
 println("here0")
 
-for failure_rate in [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75]
-    println("here1")
+failure_rate = 0.35
+#start loop
+println("here1")
 
-    # Define non-opportunistic salpingectomy parameters
-    # for non-opportunistic salpingectomy, set acceptance rate
-    #acceptance_rate = 0.1 #do 0.1, 0.2, 0.3, 0.4, 0.5
-    #uniform 
-    # linear: (0% at age 10, 100% at age 50) 
-    # exponential: 
-    # jump:
-    # Simulation parameters
+# Read simulation results
+sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
+#health_states = CSV.read("./inputs/matrix.csv", DataFrame)
+sim_res.index = [1:nrow(sim_res)...]
 
-    # Read simulation results
-    sim_res = CSV.read("./inputs/simulation_results_detailed.csv", DataFrame)
-    #health_states = CSV.read("./inputs/matrix.csv", DataFrame)
-    sim_res.index = [1:nrow(sim_res)...]
+# Start simulation
+time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
+time_salpingectomy            = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of salpingectomy
+time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
+time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
+time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 
-     # Start simulation
-    time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
-    time_salpingectomy            = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of salpingectomy
-    time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
-    time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
-    time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
-    num_salpingectomies          = SharedArray{Int64}(zeros(Int, 91))   
-    num_cum_salpingectomies      = SharedArray{Int64}(zeros(Int, 91))
+directions = []
+
+starting_point = []
+
+iterations = 10
+
+threshold = 0
 
 
-    println(nrow(sim_res))
 
-    println("here2")
-    @sync @distributed for individual in 1:nrow(sim_res) 
-        rng = MersenneTwister(1234 + individual)
-        salpingectomy_done = false
-        t_diag = sim_res.time_at_diagnosis[individual]
-        t_prev = sim_res.time_at_1[individual]
-        hist = sim_res.OvC_histology[individual]
-        raw_time_death = maximum([sim_res.time_at_OvarianDeath[individual], sim_res.time_at_OCMdeath[individual]])
-        time_death = (raw_time_death == 0) ? 1080 : min(raw_time_death, 1080)
-        time_death_int = Int(floor(time_death))
-        max_cycle = (t_diag == 0) ? time_death_int : t_diag #last time at which woman would be able to receive a salpingectomy (even if she has cancer)
-        cycle = 1
+old_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, starting_point)
 
-        # Convert ages to month indices 
+for direction in directions
 
-        while cycle <= max_cycle && !salpingectomy_done
-            #Check if this women takes abdominal surgery
-            @views rates = procedure_rate_matrix[cycle, 2:8]
-            select_surgery = sample(rng, 1:8, Weights(vcat(1 - sum(rates), rates))) # 1 = no surgery
+    iter = 1
 
-            eligible = (t_prev == 0.0 || cycle <= Int(floor(t_prev))) && coalesce(hist == "HGSC", false)
-                            
-            opp_decision = false
-           
-            if select_surgery >= 2  # Take surgery
-                
-                if time_surgery[individual, select_surgery-1] !== 0
-                    # Don't take surgery, since the women already took the surgery before.
-                    cycle += 1
-                    continue
-                end
-
-                time_surgery[individual, select_surgery-1] = cycle
-
-                # Check if this women takes salpingectomy and the effectiveness if taking salpingectomy
-                
-                opp_acceptance = opportunistic_rates[select_surgery-1, cycle]
-                opp_decision = sample(rng, [true, false], Weights([opp_acceptance, 1 - opp_acceptance]))
-
-            end
+    new_rates = direction
+    old_rates = starting_point
 
 
-            non_opp_acceptance = non_opportunistic_rates[cycle]
-            non_opp_decision = sample(rng, [true, false], Weights([non_opp_acceptance, 1 - non_opp_acceptance]))
+    #this is for increasing directions
+    while (iter <= 10)
 
-
-            #[code for if she decides to take it non-opportunistically]
+        new_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, new_rates)
         
-            # Eligable only if no cancer ever or salpingectomy happens before cancer onset
-
-            decision = (opp_decision || non_opp_decision)
-
-            if decision == true
-                salpingectomy_done = true
-                time_salpingectomy[individual] = cycle
-                
-                num_salpingectomies[Int(floor((cycle-1)/12))+10-9] += 1
-
-                if eligible
-                    # same code as before
-                    effective_salpingectomy = sample(rng, [cycle, 0], Weights([1-failure_rate, failure_rate]))
-                    if effective_salpingectomy > 0
-                        time_OvC_death_Salpingectomy[individual] = 0
-                        time_effective_salpingectomy[individual] = effective_salpingectomy
-                    else
-                        time_effective_salpingectomy[individual] = 0
-                    end
-                else
-                    # Not eligible, so no effect
-                    time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
-                    time_effective_salpingectomy[individual] = 0
-                end
-            else
-                # Did not take salpingectomy
-                time_OvC_death_Salpingectomy[individual] = sim_res.time_at_OvarianDeath[individual]
-                time_effective_salpingectomy[individual] = 0
-            end              
-
-            cycle += 1         
+        if (new_reduction >= threshold) && (old_reduction < threshold)
+            old_rates = (new_rates + old_rates)./2
+        elseif (new_reduction >= threshold) && (old_reduction >= threshold)
+            if L1_distance(old_rates, starting_point) < L1_distance(new_rates, starting_point) #I think this will always be true 
+                new_rates = (new_rates + old_rates)./2
+            end
+        else 
+            break #binary search will never produce a feasible solution
         end
+
+        iter += 1
+
     end
-    println("here3")
 
-    num_cum_salpingectomies = cumsum(num_salpingectomies)
-
-    sim_res.time_salpingectomy = time_salpingectomy
-    sim_res.time_effective_salpingectomy = time_effective_salpingectomy
-    sim_res.time_OvC_death_Salpingectomy = time_OvC_death_Salpingectomy
-
-    column_names = ["Abdominal hernia repair", "Appendectomy", "Cholecystectomy", "Colectomy", 
-                "Gastric bypass", "Hysterectomy", "Bilateral tubal ligation"]
-    df_surgery = DataFrame(time_surgery, column_names)
-
-    sim_res = [sim_res df_surgery]
-
-    # Save results as CSV file
-    CSV.write("./outputs/simulation_results_combined_0_0.5_10_$(failure_rate).csv", sim_res)
-    
-    # Calculate mortality reduction after salpingectomy                           
-    before = filter(x->x.time_at_OvarianDeath > 0.0, sim_res)                                      
-    after  = filter(x->x.time_OvC_death_Salpingectomy > 0.0, sim_res)       
-    
-    #before_HGSC = filter(x->(x.time_at_OvarianDeath > 0.0) && (x.OvC_histology == "HGSC"), sim_res)
-
-    #after_HGSC  = filter(x->(x.time_OvC_death_Salpingectomy > 0.0) && (x.OvC_histology == "HGSC"), sim_res)  
-
-    mortality_reduction = 1 - nrow(after)/nrow(before)
-
-    #mortality_reduction_HGSC = 1 - nrow(after_HGSC)/nrow(before_HGSC)
-
-    #println("age: ", age)
-
-    println("Reduction: ", round(mortality_reduction, digits=4))
-
-    #if mortality_reduction <= 0.2
-    #    break
-    #end
-
-    #println("Reduction (HGSC): ", round(mortality_reduction_HGSC, digits=4))
-
-    #push!(reduction_vec, round(mortality_reduction, digits=4))
-
-    #push!(reduction_vec_HGSC, round(mortality_reduction_HGSC, digits=4))
-
-    
-    println(round(mortality_reduction, digits=4))
-    print(num_salpingectomies)
-    print(num_cum_salpingectomies)
-
-    #df = DataFrame(reduction = reduction_vec)
-
-    #CSV.write("reduction.csv", df) 
-
+    println(new_rates, new_reduction)
 end
+
+
+
+
