@@ -121,11 +121,11 @@ end
 
     function run_simulation(
         sim_res::DataFrame, 
-        procedure_rate_matrix::SharedArray{Float64}, 
-        time_surgery::SharedArray{Float64},
-        time_effective_salpingectomy::SharedArray{Float64},
-        time_OvC_death_Salpingectomy::SharedArray{Float64}, 
-        opportunistic_rates::SharedArray{Float64}
+        procedure_rate_matrix::Matrix{Float64}, 
+        time_surgery::SharedMatrix{Float64},
+        time_effective_salpingectomy::SharedVector{Float64},
+        time_OvC_death_Salpingectomy::SharedVector{Float64}, 
+        opportunistic_rates::Matrix{Float64}
     )
 
         @sync @distributed for individual in 1:nrow(sim_res) 
