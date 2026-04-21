@@ -25,7 +25,7 @@
 ###################################################################################################################################################
 
 using Distributed
-num_node = 20
+num_node = 10
 addprocs(num_node-1)
 
 @everywhere begin
@@ -354,10 +354,12 @@ for direction in directions
 
     end
 
+    print("reduction is ")
+
     if (bottom_reduction >= threshold)
-        println(bottom_rates, bottom_reduction, L1_distance(bottom_rates, starting_point))
+        println(bottom_reduction, bottom_rates, L1_distance(bottom_rates, starting_point))
     else
-        println(top_rates, top_reduction, L1_distance(top_rates, starting_point))
+        println(top_reduction, top_rates, L1_distance(top_rates, starting_point))
     end
 
 end
