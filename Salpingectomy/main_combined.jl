@@ -25,7 +25,7 @@
 ###################################################################################################################################################
 
 using Distributed
-num_node = 18
+num_node = 20
 addprocs(num_node-1)
 
 @everywhere begin
@@ -309,7 +309,8 @@ time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 
 starting_point = repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1)
 
-directions = [repeat(hcat(fill(1, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+directions = [repeat(hcat(fill(1, 1, 60), fill(1, 1, 120), fill(1, 1, 120), fill(1, 1, 120), fill(1, 1, 120), fill(1, 1, 120), fill(1, 1, 120), fill(1, 1, 120), fill(1, 1, 120), fill(1, 1, 60)), 7, 1), 
+    repeat(hcat(fill(1, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
 repeat(hcat(fill(0, 1, 60), fill(1, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
 repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(1, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
 repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(1, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
@@ -322,7 +323,7 @@ repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1
 
 iterations = 10
 
-threshold = 0.2
+threshold = 0.0477
 
 bottom_reduction = 0.0377 
 
@@ -339,7 +340,7 @@ for direction in directions
     top_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, top_rates)
     print(top_reduction)
     bottom_rates = starting_point
-    bottom_reduction = 0.0377 
+    bottom_reduction = 0.0377
 
     while (iter <= 10)
 
