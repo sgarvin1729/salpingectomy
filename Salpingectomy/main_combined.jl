@@ -108,13 +108,11 @@ end
     end
 
     function L1_distance(
-        target_vector::AbstractVector, 
-        starting_vector::AbstractVector
+        target_vector::Matrix{Float64}, 
+        starting_vector::Matrix{Float64}
     )
-        dist = 0
-        for i in eachindex(target_vector, starting_vector)
-            dist += abs(target_vector[i] - starting_vector[i])
-        end
+
+        dist = sum(abs.(target_vector .- starting_vector))
 
         return dist
     end
@@ -324,7 +322,7 @@ repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1
 
 iterations = 10
 
-threshold = 0
+threshold = 0.2
 
 old_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, starting_point)
 
@@ -357,7 +355,7 @@ for direction in directions
 
     end
 
-    println(new_rates, new_reduction)
+    println(new_rates, new_reduction, L1_distance(new_rates, starting_point))
 end
 
 
