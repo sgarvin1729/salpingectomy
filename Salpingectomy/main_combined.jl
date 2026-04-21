@@ -309,18 +309,18 @@ time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))    
 time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
 time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
 
-starting_point = hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60))
+starting_point = repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1)
 
-directions = [hcat(fill(1, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(1, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(1, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(1, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(1, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(1, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(1, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(1, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(1, 1, 120), fill(0.05, 1, 60)), 
-hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(1, 1, 60))]
+directions = [repeat(hcat(fill(1, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(1, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(1, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(1, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(1, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(1, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(1, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(1, 1, 120), fill(0.08, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(1, 1, 120), fill(0.05, 1, 60)), 7, 1), 
+repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 120), fill(0.35, 1, 120), fill(0.32, 1, 120), fill(0.25, 1, 120), fill(0.18, 1, 120), fill(0.12, 1, 120), fill(0.08, 1, 120), fill(1, 1, 60)), 7, 1)]
 
 iterations = 10
 
@@ -328,7 +328,7 @@ threshold = 0
 
 old_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, starting_point)
 
-print(old_reduction)
+println(old_reduction)
 
 for direction in directions
 
