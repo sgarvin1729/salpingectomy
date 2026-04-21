@@ -197,10 +197,10 @@ end
         end
         println("here3")
                         
-        before = filter(x->x.time_at_OvarianDeath > 0.0, sim_res)                                      
-        after  = filter(x->x.time_OvC_death_Salpingectomy > 0.0, sim_res)       
-        
-        mortality_reduction = 1 - nrow(after)/nrow(before)
+        before_count = count(>(0.0), sim_res.time_at_OvarianDeath)
+        after_count  = count(>(0.0), time_OvC_death_Salpingectomy)
+
+        mortality_reduction = 1 - after_count / before_count
 
         return round(mortality_reduction, digits=4)
 
