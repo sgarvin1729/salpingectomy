@@ -324,28 +324,27 @@ iterations = 10
 
 threshold = 0.2
 
-old_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, starting_point)
-
-println(old_reduction)
+bottom_reduction = 0.0377 
 
 for direction in directions
 
     iter = 1
 
-    new_rates = direction
-    old_rates = starting_point
+    top_rates = direction
+    top_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, top_rates)
+    print(top_reduction)
+    bottom_rates = starting_point
 
-
-    #this is for increasing directions
     while (iter <= 10)
 
-        new_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, new_rates)
-        
-        if (new_reduction >= threshold) && (old_reduction < threshold)
-            old_rates = (new_rates + old_rates)./2
-        elseif (new_reduction >= threshold) && (old_reduction >= threshold)
-            if L1_distance(old_rates, starting_point) < L1_distance(new_rates, starting_point) #I think this will always be true 
-                new_rates = (new_rates + old_rates)./2
+
+        if (top_reduction >= threshold) && (bottom_reduction < threshold)
+            bottom_rates = (top_rates + bottom_rates)./2
+            bottom_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, bottom_rates)
+        elseif (top_reduction >= threshold) && (bottom_reduction >= threshold)
+            if L1_distance(bottom_rates, starting_point) < L1_distance(top_rates, starting_point) #I think this will always be true 
+                top_rates = (top_rates + bottom_rates)./2
+                top_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, top_rates)
             end
         else 
             break #binary search will never produce a feasible solution
@@ -355,7 +354,12 @@ for direction in directions
 
     end
 
-    println(new_rates, new_reduction, L1_distance(new_rates, starting_point))
+    if (bottom_reduction >= threshold)
+        println(bottom_rates, bottom_reduction, L1_distance(bottom_rates, starting_point))
+    else
+        println(top_rates, top_reduction, L1_distance(top_rates, starting_point))
+    end
+
 end
 
 
