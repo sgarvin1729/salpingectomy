@@ -284,19 +284,12 @@ procedure_rate_matrix = 1 .-exp.(-(procedure_rate_matrix) .*(1/12))     # Conver
 opp_strategies = Dict("everyone" =>fill(1, 7, 1080), 
                 "BTL_only" => vcat(fill(0, 6, 1080), fill(1, 1, 1080)),
                 "main_v2" => vcat(fill(0, 6, 1080), hcat(fill(1, 1, 480), fill(0, 1, 600))),
-                "twentypercenteverytenyears" => repeat(twentypercenteverytenyears', 7, 1),
-                "uniformthirtysixtynormalfortyfiveseven" => repeat(uniformthirtysixtynormalfortyfiveseven', 7, 1)
+                "twentypercenteverytenyears" => repeat(twentypercenteverytenyears', 7, 1)
                 )
 
-non_opp_strategies = Dict("twentypercenteverytenyears" => twentypercenteverytenyears, 
-                    "uniformthirtysixtynormalfortyfiveseven" => uniformthirtysixtynormalfortyfiveseven
-                    )
 
 opportunistic_rates = opp_strategies[opp_strategy]
 
-non_opportunistic_rates = non_opp_strategies[non_opp_strategy]
-
-println(non_opportunistic_rates)
 
 println("here0")
 
