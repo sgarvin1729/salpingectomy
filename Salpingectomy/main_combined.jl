@@ -334,6 +334,7 @@ for direction in directions
     top_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, top_rates)
     print(top_reduction)
     bottom_rates = starting_point
+    bottom_reduction = 0.0377 
 
     while (iter <= 10)
 
