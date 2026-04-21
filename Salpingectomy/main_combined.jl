@@ -122,9 +122,9 @@ end
     function run_simulation(
         sim_res::DataFrame, 
         procedure_rate_matrix::Matrix{Float64}, 
-        time_surgery::SharedMatrix{Float64},
-        time_effective_salpingectomy::SharedVector{Float64},
-        time_OvC_death_Salpingectomy::SharedVector{Float64}, 
+        time_surgery::SharedMatrix{Int64},
+        time_effective_salpingectomy::SharedVector{Int64},
+        time_OvC_death_Salpingectomy::SharedVector{Int64}, 
         opportunistic_rates::Matrix{Float64}
     )
 
