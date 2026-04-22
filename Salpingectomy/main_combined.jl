@@ -336,7 +336,7 @@ bottom_reduction = 0.0377
 
 for threshold in thresholds
     print("threshold is")
-    print("threshold")
+    print(threshold)
 
     for direction in directions
         time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
