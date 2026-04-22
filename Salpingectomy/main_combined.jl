@@ -311,7 +311,7 @@ starting_point = repeat(hcat(fill(0, 1, 60), fill(0.12, 1, 120), fill(0.28, 1, 1
 v1 = [fill(0.28, 1, 120), fill(0.64, 1, 120), fill(1, 1, 120)]
 v2 = [fill(0.35, 1, 120), fill(0.675, 1, 120), fill(1, 1, 120)]
 v3 = [fill(0.32, 1, 120), fill(1, 1, 120)]
-v4 = [fill(0.25, 1, 120), fill(0.25, 1, 120)]
+v4 = [fill(0.25, 1, 120), fill(1, 1, 120)]
 
 directions = []
 
