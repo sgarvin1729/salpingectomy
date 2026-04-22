@@ -330,7 +330,7 @@ print(length(directions))
 
 iterations = 10
 
-thresholds = [0.09793, 0.08125, 0.06817]
+thresholds = [0.05209]
 
 bottom_reduction = 0.0377 
 
@@ -349,32 +349,17 @@ for threshold in thresholds
 
         top_rates = direction
         top_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, top_rates)
-        print(top_reduction)
         bottom_rates = starting_point
         bottom_reduction = 0.0377
 
-        while (iter <= 10)
-
+        while (iter <= n)
 
             if (top_reduction >= threshold) && (bottom_reduction < threshold)
                 bottom_rates = (top_rates + bottom_rates)./2
-                time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
-                time_salpingectomy            = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of salpingectomy
-                time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
-                time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
-                time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
-
                 bottom_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, bottom_rates)
             elseif (top_reduction >= threshold) && (bottom_reduction >= threshold)
-                if L1_distance(bottom_rates, starting_point) < L1_distance(top_rates, starting_point) #I think this will always be true 
-                    top_rates = (top_rates + bottom_rates)./2
-                    time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
-                    time_salpingectomy            = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of salpingectomy
-                    time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
-                    time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
-                    time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
-
-                    top_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, top_rates)
+                if L1_distance(bottom_rates, starting_point) < L1_distance(top_rates, starting_point)  
+                     top_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, top_rates)
                 end
             else 
                 print("skipped this case")
