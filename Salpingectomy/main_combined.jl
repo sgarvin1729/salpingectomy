@@ -330,7 +330,7 @@ print(length(directions))
 
 iterations = 10
 
-thresholds = [0.103025, 0.08125, 0.059475]
+thresholds = [0.09793, 0.08125, 0.06817]
 
 bottom_reduction = 0.0377 
 
@@ -385,14 +385,12 @@ for threshold in thresholds
 
         end
 
-        print("reduction is ")
-
         if (bottom_reduction >= threshold)
             print("bottom reduction won")
-            println(bottom_reduction, bottom_rates[1, 181], bottom_rates[1, 301], bottom_rates[1, 421], bottom_rates[1, 541], L1_distance(bottom_rates, starting_point))
+            println(bottom_reduction, ", ", bottom_rates[1, 181], ", ", bottom_rates[1, 301], ", ", bottom_rates[1, 421], ", ", bottom_rates[1, 541], ", ", L1_distance(bottom_rates, starting_point))
         else
             print("top reduction won")
-            println(top_reduction, top_rates[1, 181], top_rates[1, 301], top_rates[1, 421], top_rates[1, 541], L1_distance(top_rates, starting_point))
+            println(top_reduction, ", ", top_rates[1, 181], ", ", top_rates[1, 301], ", ", top_rates[1, 421], ", ", top_rates[1, 541], ", ", L1_distance(top_rates, starting_point))
         end
 
     end
