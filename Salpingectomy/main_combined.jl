@@ -352,12 +352,22 @@ for threshold in thresholds
         bottom_rates = starting_point
         bottom_reduction = 0.0377
 
-        while (iter <= n)
+        while (iter <= 10)
 
             if (top_reduction >= threshold) && (bottom_reduction < threshold)
-                bottom_rates = (top_rates + bottom_rates)./2
+                time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
+                time_salpingectomy            = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of salpingectomy
+                time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
+                time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
+                time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
+                bottom_rates = (top_rates + bottom_rates)./2            
                 bottom_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, bottom_rates)
             elseif (top_reduction >= threshold) && (bottom_reduction >= threshold)
+                time_surgery                 = SharedArray{Int64}(zeros(Int, nrow(sim_res),7))      # Time of each treatment 
+                time_salpingectomy            = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of salpingectomy
+                time_effective_salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of effective salpingectomy
+                time_OvC_death_Salpingectomy = SharedArray{Int64}(zeros(Int, nrow(sim_res)))        # Time of ovarian cancer death after salpingectomy
+                time_OvC_death_Salpingectomy .= sim_res.time_at_OvarianDeath
                 if L1_distance(bottom_rates, starting_point) < L1_distance(top_rates, starting_point)  
                      top_reduction = run_simulation(sim_res, procedure_rate_matrix, time_surgery, time_effective_salpingectomy, time_OvC_death_Salpingectomy, top_rates)
                 end
